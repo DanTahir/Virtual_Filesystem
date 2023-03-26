@@ -1,9 +1,9 @@
 /**************************************************************
 * Class:  CSC-415-0# Fall 2021
-* Names: 
-* Student IDs:
-* GitHub Name:
-* Group Name:
+* Names: Danial Tahir, Chris Camano, Mahek Delawala, Savy
+* Student IDs: 920838929, 922968394
+* GitHub Name: DanTahir, chriscamano, Mahek-Delawala
+* Group Name: Segfault
 * Project: Basic File System
 *
 * File: b_io.c
