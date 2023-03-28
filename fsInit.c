@@ -44,18 +44,7 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 		bitmapSet(bitmap, 0);
 		uint64_t bitmapBlockSize = roundUpDiv(bitmapBytes, blockSize);
 		bitmapRangeSet(bitmap, 1, bitmapBlockSize);
-		bool bitmapVal = bitmapGet(bitmap, 0);
-		printf("bitvalue of position 0 - %d\n", bitmapVal);
-		bitmapVal = bitmapGet(bitmap, 4);
-		printf("bitvalue of position 4 - %d\n", bitmapVal);
-		bitmapVal = bitmapGet(bitmap, 5);
-		printf("bitvalue of position 5 - %d\n", bitmapVal);
-		bitmapVal = bitmapGet(bitmap, 6);
-		printf("bitvalue of position 6 - %d\n", bitmapVal);
-		bitmapVal = bitmapGet(bitmap, 55);
-		printf("bitvalue of position 55 - %d\n", bitmapVal);
-		bitmapVal = bitmapGet(bitmap, numberOfBlocks);
-		printf("bitvalue of position %lu - %d\n", numberOfBlocks, bitmapVal);		
+		bool bitmapVal = bitmapGet(bitmap, 0);	
 		printf("writing bitmap\n");
 		bitmapWrite(bitmap, numberOfBlocks, blockSize);
 		free (bitmap);
@@ -83,6 +72,12 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 		printf("bitvalue of position 55 - %d\n", bitmapVal);
 		bitmapVal = bitmapGet(bitmap, numberOfBlocks);
 		printf("bitvalue of position %lu - %d\n", numberOfBlocks, bitmapVal);
+
+		bitmapRangeSet(bitmap, 6, 40);
+		bitmapRangeSet(bitmap, 50, 20);
+		uint64_t freeSpace = bitmapFirstFreeRange(bitmap, numberOfBlocks, 30);
+		printf("freespace returns %lu, should be 70\n", freeSpace);
+
 		free(vcb);
 		vcb = NULL;
 		free(bitmap);

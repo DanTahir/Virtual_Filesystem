@@ -34,3 +34,4 @@ bool bitmapGet       (byte * bitmap, uint64_t pos);
 void bitmapSet       (byte * bitmap, uint64_t pos);
 void bitmapReset     (byte * bitmap, uint64_t pos);
 int  bitmapSearch    (byte * bitmap, bool n, uint64_t size, uint64_t start);
+uint64_t bitmapFirstFreeRange(byte * bitmap, uint64_t blockCount, uint64_t range);

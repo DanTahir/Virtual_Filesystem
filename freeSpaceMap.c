@@ -27,34 +27,11 @@ void bitmapRead  (byte * bitmap, uint64_t blockCount, uint64_t blockSize){
     void * tempBuffer = malloc(blocksToRead * blockSize);
     LBAread(tempBuffer, blocksToRead, 1);
     memcpy(bitmap, tempBuffer, bitmapBytes);
-    printf("inside bitmapRead:\n");    
-    bool bitmapVal = bitmapGet(bitmap, 4);
-    printf("bitvalue of position 4 - %d\n", bitmapVal);
-    bitmapVal = bitmapGet(bitmap, 5);
-    printf("bitvalue of position 5 - %d\n", bitmapVal);
-    bitmapVal = bitmapGet(bitmap, 6);
-    printf("bitvalue of position 6 - %d\n", bitmapVal);
-    bitmapVal = bitmapGet(bitmap, 55);
-    printf("bitvalue of position 55 - %d\n", bitmapVal);
-    bitmapVal = bitmapGet(bitmap, blockCount);
-    printf("bitvalue of position %lu - %d\n", blockCount, bitmapVal);
     free (tempBuffer);
     tempBuffer = NULL;
 }
 
 void bitmapWrite (byte * bitmap, uint64_t blockCount, uint64_t blockSize){
-    
-    bool bitmapVal = bitmapGet(bitmap, 4);
-    printf("bitvalue of position 4 - %d\n", bitmapVal);
-    bitmapVal = bitmapGet(bitmap, 5);
-    printf("bitvalue of position 5 - %d\n", bitmapVal);
-    bitmapVal = bitmapGet(bitmap, 6);
-    printf("bitvalue of position 6 - %d\n", bitmapVal);
-    bitmapVal = bitmapGet(bitmap, 55);
-    printf("bitvalue of position 55 - %d\n", bitmapVal);
-    bitmapVal = bitmapGet(bitmap, blockCount);
-    printf("bitvalue of position %lu - %d\n", blockCount, bitmapVal);
-    
     uint64_t bitmapBytes = roundUpDiv(blockCount, BIT);
     uint64_t blocksToWrite = roundUpDiv(bitmapBytes, blockSize);
     void * tempBuffer = malloc(blocksToWrite * blockSize);
@@ -116,4 +93,25 @@ static void reset(byte *a, byte pos) {
 /* pos is something from 0 to 7*/
 /* sets bit to 0 */
     *a &= ~(1 << pos);
+}
+
+uint64_t bitmapFirstFreeRange(byte * bitmap, uint64_t blockCount, uint64_t range){
+
+    for(uint64_t i = 0; i < blockCount; i++){
+        if (bitmapGet(bitmap,i) == 0){
+            uint64_t freeStart = i;
+            for(i = i; i < freeStart + range; i++){
+                if (bitmapGet(bitmap,i) == 1){
+                    break;
+                }
+            }
+            if (i == freeStart + range){
+                return freeStart;
+            }
+        }
+    }
+
+    return blockCount;
+
+
 }
