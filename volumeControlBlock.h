@@ -22,7 +22,7 @@
 
 #include "fsLow.h"
 
-#define SIGNAT 29339303922
+#define SIGNAT 29339303911
 
 typedef struct VCB
 {
@@ -39,6 +39,8 @@ uint64_t globalBlockSize;
 uint64_t isVCBSet(uint64_t blockSize);
 
 uint64_t setVCB(uint64_t blockCount, uint64_t blockSize);
+
+VCB * getVCBG();
 
 VCB * getVCB(uint64_t blockSize);
 

@@ -51,8 +51,10 @@ uint64_t setVCB(uint64_t blockCount, uint64_t blockSize){
     vcb->blockSize = blockSize;
     vcb->blockCount = blockCount;
     vcb->volumeSize = blockSize * blockCount;
-    vcb->freeSpaceMapStart = 0;
-    vcb->rootDirStart = 0;
+    vcb->freeSpaceMapStart = 1;
+    uint64_t bytesInMap = roundUpDiv(blockCount, 8);
+    uint64_t blocksInMap = roundUpDiv(bytesInMap, blockSize);
+    vcb->rootDirStart = vcb->freeSpaceMapStart + blocksInMap;
 
     void * tempBuffer = malloc(blockSize);
 
@@ -78,6 +80,10 @@ VCB * getVCB(uint64_t blockSize){
 
     return vcb;
 
+}
+
+VCB * getVCBG(){
+    return getVCB(globalBlockSize);
 }
 
 uint64_t roundUpDiv(uint64_t a, uint64_t b){

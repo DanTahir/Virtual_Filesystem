@@ -23,8 +23,7 @@
 
 #include "fsLow.h"
 #include "mfs.h"
-#include "volumeControlBlock.h"
-#include "freeSpaceMap.h"
+#include "directory.h"
 
 
 int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
@@ -47,6 +46,15 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 		bool bitmapVal = bitmapGet(bitmap, 0);	
 		printf("writing bitmap\n");
 		bitmapWrite(bitmap, numberOfBlocks, blockSize);
+		printf("getting VCB\n");
+		VCB * vcb = getVCBG();
+		Dir * dir = malloc(sizeof(Dir));
+		printf("writing root directory\n");
+		dirInitNew(dir, vcb->rootDirStart, numberOfBlocks, blockSize);
+
+
+
+
 		free (bitmap);
 		bitmap = NULL;
 
@@ -54,7 +62,7 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 	}
 	else {
 		printf("running getVCB\n");
-		VCB * vcb = getVCB(blockSize);
+		VCB * vcb = getVCBG();
 		printf("signature - %lu,\nblocks - %lu,\nfreespacemap start - %lu\n", 
 			vcb->signature, 
 			vcb->blockCount,
@@ -68,10 +76,23 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 		printf("bitvalue of position 5 - %d\n", bitmapVal);
 		bitmapVal = bitmapGet(bitmap, 6);
 		printf("bitvalue of position 6 - %d\n", bitmapVal);
+		bitmapVal = bitmapGet(bitmap, 7);
+		printf("bitvalue of position 7 - %d\n", bitmapVal);
+		bitmapVal = bitmapGet(bitmap, 8);
+		printf("bitvalue of position 8 - %d\n", bitmapVal);
+		bitmapVal = bitmapGet(bitmap, 9);
+		printf("bitvalue of position 9 - %d\n", bitmapVal);
 		bitmapVal = bitmapGet(bitmap, 55);
 		printf("bitvalue of position 55 - %d\n", bitmapVal);
-		bitmapVal = bitmapGet(bitmap, numberOfBlocks);
-		printf("bitvalue of position %lu - %d\n", numberOfBlocks, bitmapVal);
+		bitmapVal = bitmapGet(bitmap, numberOfBlocks - 1);
+		printf("bitvalue of position %lu - %d\n", numberOfBlocks - 1, bitmapVal);
+
+		printf("size of dir: %lu\n", sizeof(Dir));
+		printf("getting root directory\n");
+		Dir * root = malloc(sizeof(Dir));
+		dirRead(root, vcb->rootDirStart, numberOfBlocks, blockSize);
+		printf("parent\nname: %s\nlocation: %lu\n", root->dirEntries[0].name, root->dirEntries[0].location);
+		printf("this\nname: %s\nlocation: %lu\n", root->dirEntries[1].name, root->dirEntries[1].location);
 
 		bitmapRangeSet(bitmap, 6, 40);
 		bitmapRangeSet(bitmap, 50, 20);
@@ -82,6 +103,8 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 		vcb = NULL;
 		free(bitmap);
 		bitmap = NULL;
+		free(root);
+		root = NULL;
 	}
 
 	/*
