@@ -22,11 +22,6 @@ void dirInitNew(Dir * dir, uint64_t parentDirLoc, uint64_t blockCount, uint64_t 
         dir->dirEntries[i].size = 0;
         dir->dirEntries[i].isDir = 0;
     }
-    
-    strcpy(dir->dirEntries[0].name, ".");
-    dir->dirEntries[0].location = parentDirLoc;
-    dir->dirEntries[0].size = sizeof(Dir);
-    dir->dirEntries[0].isDir = 1;
 
     uint64_t dirInBlocks = roundUpDiv(sizeof(Dir), blockSize);
     byte * bitmap = malloc(roundUpDiv(blockCount, BIT));
@@ -35,8 +30,15 @@ void dirInitNew(Dir * dir, uint64_t parentDirLoc, uint64_t blockCount, uint64_t 
     bitmapRangeSet(bitmap, freeSpace, dirInBlocks);
     bitmapWrite(bitmap, blockCount, blockSize);
 
+    
+    strcpy(dir->dirEntries[0].name, ".");
+    dir->dirEntries[0].location = freeSpace;
+    dir->dirEntries[0].size = sizeof(Dir);
+    dir->dirEntries[0].isDir = 1;
+
+
     strcpy(dir->dirEntries[1].name, "..");
-    dir->dirEntries[1].location = freeSpace;
+    dir->dirEntries[1].location = parentDirLoc;
     dir->dirEntries[1].size = sizeof(Dir);
     dir->dirEntries[1].isDir = 1;    
 
