@@ -34,16 +34,24 @@ typedef struct VCB
     uint64_t blockCount;
 } VCB;
 
+// we set this at initialization then use it when we need
+// to get the vcb
 uint64_t globalBlockSize;
 
+// this checks whether the vcb is set, using the signature
 uint64_t isVCBSet(uint64_t blockSize);
 
+// this overwrites the vcb to reset it
 uint64_t setVCB(uint64_t blockCount, uint64_t blockSize);
 
+// this gets the vcb using the global block size variable
 VCB * getVCBG();
 
+// this gets the vcb
 VCB * getVCB(uint64_t blockSize);
 
+// this divides numbers returning one greater if there is
+// a remainder
 uint64_t roundUpDiv(uint64_t a, uint64_t b);
 
 #endif

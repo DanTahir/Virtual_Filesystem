@@ -77,3 +77,31 @@ int fs_mkdir(const char *pathname, mode_t mode){
     return 0; 
 
 }
+
+int fs_setcwd(char *pathname){
+
+    char finalDirName[NAMELEN];
+    int traverseRet = dirTraversePath(workingDir, pathname, finalDirName);
+    if (traverseRet == -1) {
+        return -1;
+    }
+    int i;
+    for(i = 0; i < MAXDIRENTRIES; i++){
+        int strcmpVal = strcmp(workingDir->dirEntries[i].name, finalDirName);
+        if(strcmpVal == 0){
+            break;
+        }
+    }
+    if (i == MAXDIRENTRIES){
+        return -1;
+    }
+    if (workingDir->dirEntries[i].isDir != 1){
+        return -1;
+    }
+    VCB * vcb = getVCBG();
+    dirSetWorking(workingDir->dirEntries[i].location, vcb->blockCount, vcb->blockSize);
+    free (vcb);
+    vcb = NULL;
+    return 0;
+
+}

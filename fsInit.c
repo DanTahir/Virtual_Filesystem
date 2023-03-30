@@ -119,6 +119,27 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 	printf("Making directory test1/test2\n");	
 	mkdirReturn = fs_mkdir("test1/test2", aMode);
 	printf("create test1/test2 returns %d\n", mkdirReturn);
+	printf("Making directory test1/test2/test3\n");	
+	mkdirReturn = fs_mkdir("test1/test2/test3", aMode);
+	printf("create test1/test2/test3 returns %d\n", mkdirReturn);
+	printf("changing working directory to test1");
+	int setcwdReturn = fs_setcwd("test1");
+	printf("changing to test1 returns %d\n", setcwdReturn);
+	printf("directory location - %lu\n", workingDir->dirEntries[0].location);
+	printf("changing working directory to test2/test3");
+	setcwdReturn = fs_setcwd("test2/test3");
+	printf("changing to test2/test3 returns %d\n", setcwdReturn);
+	printf("directory location - %lu\n", workingDir->dirEntries[0].location);
+	printf("changing working directory back to test2 (..)");
+	setcwdReturn = fs_setcwd("..");
+	printf("changing to test2 (..) returns %d\n", setcwdReturn);
+	printf("directory location - %lu\n", workingDir->dirEntries[0].location);
+	for(int i = 0; i < MAXDIRENTRIES; i++){
+		if(workingDir->dirEntries[i].name[0] != '\0'){
+			printf("Entry in working directory - %s\n", workingDir->dirEntries[i].name);
+		}
+	}
+
 	free(vcb);
 	vcb=NULL;
 	return 0;
