@@ -80,6 +80,11 @@ void dirRead(Dir * dir, uint64_t location, uint64_t blockCount, uint64_t blockSi
 void dirSetWorking(uint64_t location, uint64_t blockCount, uint64_t blockSize){
     dirRead(workingDir, location, blockCount, blockSize);
 }
+
+void dirResetWorking(uint64_t blockCount, uint64_t blockSize){
+    dirRead(workingDir, workingDir->dirEntries[0].location, blockCount, blockSize);
+}
+
 void dirInitWorking(uint64_t location, uint64_t blockCount, uint64_t blockSize){
     workingDir = malloc(sizeof(Dir));
     dirRead(workingDir, location, blockCount, blockSize);
@@ -89,7 +94,7 @@ void dirFreeWorking(){
     workingDir = NULL;
 }
 
-int dirTraversePath(Dir * dir, const char * pathName, char ** endName){
+int dirTraversePath(Dir * dir, const char * pathName, char * endName){
     VCB * vcb = getVCBG();
     char * pathNonConst = strdup(pathName);
 
@@ -111,6 +116,7 @@ int dirTraversePath(Dir * dir, const char * pathName, char ** endName){
                         break;
                     }
                     else{
+                        printf("isDir != 1\n");
                         free(vcb);
                         vcb = NULL; 
                         free(pathNonConst);
@@ -120,6 +126,7 @@ int dirTraversePath(Dir * dir, const char * pathName, char ** endName){
                 }
             }
             if (i == MAXDIRENTRIES){
+                printf("path node not found\n");
                 free(vcb);
                 vcb = NULL; 
                 free(pathNonConst);
@@ -128,7 +135,7 @@ int dirTraversePath(Dir * dir, const char * pathName, char ** endName){
             }
         }
         else {
-            *endName = token;
+            strncpy(endName, token, NAMELEN -1);
         }
 
         token = nextToken;

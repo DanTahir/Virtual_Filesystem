@@ -44,7 +44,8 @@ uint64_t dirInitNew(Dir * dir, uint64_t parentDirLoc, uint64_t blockCount, uint6
 void dirWrite(Dir * dir, uint64_t location, uint64_t blockCount, uint64_t blockSize);
 void dirRead(Dir * dir, uint64_t location, uint64_t blockCount, uint64_t blockSize);
 void dirSetWorking(uint64_t location, uint64_t blockCount, uint64_t blockSize);
+void dirResetWorking(uint64_t blockCount, uint64_t blockSize);
 void dirInitWorking(uint64_t location, uint64_t blockCount, uint64_t blockSize);
 void dirFreeWorking();
-int dirTraversePath(Dir * dir, const char * pathName, char ** endName);
+int dirTraversePath(Dir * dir, const char * pathName, char * endName);
 void dirCopyWorking(Dir * dir);

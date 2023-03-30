@@ -19,9 +19,11 @@ int fs_mkdir(const char *pathname, mode_t mode){
     
     Dir * dir = malloc(sizeof(Dir));
     dirCopyWorking(dir);
-    char * dirToMake;
-    int traverseReturn = dirTraversePath(dir, pathname, &dirToMake);
+    char * dirToMake = malloc(NAMELEN);
+    int traverseReturn = dirTraversePath(dir, pathname, dirToMake);
+    printf("dir to make - %s\n", dirToMake);
     if(traverseReturn == -1){
+        printf("traverse path failed");
         free(dir);
         dir = NULL;
         return -1;
@@ -30,6 +32,7 @@ int fs_mkdir(const char *pathname, mode_t mode){
     for(i = 0; i < MAXDIRENTRIES; i++){
         int strcmpVal = strncmp(dir->dirEntries[i].name, dirToMake, NAMELEN - 1);
         if (strcmpVal == 0){
+            printf("dirToMake found in dir\n");
             free(dir);
             dir = NULL;
             return -1;
@@ -41,6 +44,7 @@ int fs_mkdir(const char *pathname, mode_t mode){
         }
     }
     if(i == MAXDIRENTRIES){
+        printf("dir full");
         free(dir);
         dir = NULL;
         return -1;
@@ -58,6 +62,7 @@ int fs_mkdir(const char *pathname, mode_t mode){
         vcb->blockSize);
 
     dirWrite(dir, dir->dirEntries[0].location, vcb->blockCount, vcb->blockSize);
+    dirResetWorking(vcb->blockCount, vcb->blockSize);
 
 
     free(vcb);
@@ -65,7 +70,9 @@ int fs_mkdir(const char *pathname, mode_t mode){
     free(dir);
     dir = NULL;
     free(newDir);
-    newDir = NULL;   
+    newDir = NULL; 
+    free(dirToMake);
+    dirToMake = NULL;  
 
     return 0; 
 
