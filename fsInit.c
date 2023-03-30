@@ -23,7 +23,7 @@
 
 #include "fsLow.h"
 #include "mfs.h"
-#include "directory.h"
+
 
 
 int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
@@ -107,21 +107,27 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 		root = NULL;
 	}
 
-	/*
-	byte * bitmap = malloc(roundUpDiv(numberOfBlocks, BIT));
+	VCB * vcb = getVCBG();
+	dirInitWorking(vcb->rootDirStart, vcb->blockCount, vcb->blockSize);
+	printf("working directory:\n");
+	printf("this\nname: %s\nlocation: %lu\n", workingDir->dirEntries[0].name, workingDir->dirEntries[0].location);
+	printf("parent\nname: %s\nlocation: %lu\n", workingDir->dirEntries[1].name, workingDir->dirEntries[1].location);
 
-	bitmapSet(bitmap, 55);
-
-	bool bitmapVal = bitmapGet(bitmap, 55);
-
-	printf("bitvalue of position 55 - %d\n", bitmapVal);
-	*/
-
+	printf("Making directory test1\n");
+	mode_t aMode;
+	int mkdirReturn = fs_mkdir("test1", aMode);
+	printf("create test1 returns %d\n", mkdirReturn);
+	printf("Making directory test1/test2\n");	
+	mkdirReturn = fs_mkdir("test1/test2", aMode);
+	printf("create test1/test2 returns %d\n", mkdirReturn);
+	free(vcb);
+	vcb=NULL;
 	return 0;
 }
 	
 	
 void exitFileSystem ()
-	{
+{
 	printf ("System exiting\n");
-	}
+	dirFreeWorking();
+}

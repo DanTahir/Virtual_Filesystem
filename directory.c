@@ -2,7 +2,7 @@
 * Class:  CSC-415-03 Spring 2023 
 * Names: Danial Tahir, Chris Camano, Mahek Delawala, Savjot Dhillon
 * Student IDs: 920838929, 921642160, 922968394, 918239054
-* GitHub Name: DanTahir, chriscamano, Mahek-Delawala, dsav99
+* GitHub Name: DanTahir
 * Group Name: Segfault
 * Project: Basic File System
 *
@@ -15,7 +15,7 @@
 
 #include "directory.h"
 
-void dirInitNew(Dir * dir, uint64_t parentDirLoc, uint64_t blockCount, uint64_t blockSize){
+uint64_t dirInitNew(Dir * dir, uint64_t parentDirLoc, uint64_t blockCount, uint64_t blockSize){
     for (int i = 0; i < MAXDIRENTRIES; i++){
         dir->dirEntries[i].name[0] = '\0';
         dir->dirEntries[i].location = 0;
@@ -47,6 +47,8 @@ void dirInitNew(Dir * dir, uint64_t parentDirLoc, uint64_t blockCount, uint64_t 
     free(bitmap);
     bitmap = NULL;
 
+    return freeSpace;
+
 
 }
 
@@ -73,6 +75,73 @@ void dirRead(Dir * dir, uint64_t location, uint64_t blockCount, uint64_t blockSi
     free(tempBuffer);
     tempBuffer = NULL;
 
+}
 
+void dirSetWorking(uint64_t location, uint64_t blockCount, uint64_t blockSize){
+    dirRead(workingDir, location, blockCount, blockSize);
+}
+void dirInitWorking(uint64_t location, uint64_t blockCount, uint64_t blockSize){
+    workingDir = malloc(sizeof(Dir));
+    dirRead(workingDir, location, blockCount, blockSize);
+}
+void dirFreeWorking(){
+    free(workingDir);
+    workingDir = NULL;
+}
 
+int dirTraversePath(Dir * dir, const char * pathName, char ** endName){
+    VCB * vcb = getVCBG();
+    char * pathNonConst = strdup(pathName);
+
+    if (pathNonConst[0] == '/'){
+        dirRead(dir, vcb->rootDirStart, vcb->blockCount, vcb->blockSize);
+    }
+    char * token = strtok(pathNonConst, "/");
+
+    while(token != NULL) {
+        char * nextToken = strtok(NULL, "/");
+        if (nextToken != NULL)
+        {
+            int i;
+            for(i = 0; i < MAXDIRENTRIES; i++){
+                int compare = strcmp(token, dir->dirEntries[i].name);
+                if (compare == 0){
+                    if(dir->dirEntries[i].isDir == 1){
+                        dirRead(dir, dir->dirEntries[i].location, vcb->blockCount, vcb->blockSize);
+                        break;
+                    }
+                    else{
+                        free(vcb);
+                        vcb = NULL; 
+                        free(pathNonConst);
+                        pathNonConst = NULL;                                               
+                        return -1;
+                    }
+                }
+            }
+            if (i == MAXDIRENTRIES){
+                free(vcb);
+                vcb = NULL; 
+                free(pathNonConst);
+                pathNonConst = NULL;                               
+                return -1;
+            }
+        }
+        else {
+            *endName = token;
+        }
+
+        token = nextToken;
+
+    }
+    free(vcb);
+    vcb = NULL;
+    free(pathNonConst);
+    pathNonConst = NULL;
+    return 0;
+
+}
+
+void dirCopyWorking(Dir * dir){
+    memcpy(dir, workingDir, sizeof(Dir));
 }
