@@ -21,6 +21,7 @@ static void reset(byte *, byte);
 
 /* CAREFUL WITH pos AND BITMAP SIZE! */
 
+// this reads the bitmap from disk into the passed-in byte array
 void bitmapRead  (byte * bitmap, uint64_t blockCount, uint64_t blockSize){
     uint64_t bitmapBytes = roundUpDiv(blockCount, BIT);
     uint64_t blocksToRead = roundUpDiv(bitmapBytes, blockSize);
@@ -31,6 +32,7 @@ void bitmapRead  (byte * bitmap, uint64_t blockCount, uint64_t blockSize){
     tempBuffer = NULL;
 }
 
+// this writes the passed-in byte array to disk as the bitmap
 void bitmapWrite (byte * bitmap, uint64_t blockCount, uint64_t blockSize){
     uint64_t bitmapBytes = roundUpDiv(blockCount, BIT);
     uint64_t blocksToWrite = roundUpDiv(bitmapBytes, blockSize);
@@ -41,27 +43,40 @@ void bitmapWrite (byte * bitmap, uint64_t blockCount, uint64_t blockSize){
     tempBuffer = NULL;
 }
 
+// this sets a range of bits in the passed-in byte array to 1. It is
+// up to the user to ensure that position is within the range of the
+// size of the bitmap. Position is in bits, not bytes.
 void bitmapRangeSet(byte * bitmap, uint64_t pos, uint64_t range){
     for (int i = pos; i < pos + range; i++){
         bitmapSet(bitmap, i);
     }
 }
+
+// this sets a range of bits in the passed-in byte array to 0. It is
+// up to the user to ensure that position is within the range of the
+// size of the bitmap. Position is in bits, not bytes.
 void bitmapRangeReset(byte * bitmap, uint64_t pos, uint64_t range){
     for (int i = pos; i < pos + range; i++){
         bitmapReset(bitmap, i);
     }
 }
 
+// this returns the value of a single bit in the passed in byte array
 bool bitmapGet(byte *bitmap, uint64_t pos) {
 /* gets the value of the bit at pos */
     return get(bitmap[pos/BIT], pos%BIT);
 }
-
+// this sets a single bit in the passed-in byte array to 1. It is
+// up to the user to ensure that position is within the range of the
+// size of the bitmap. Position is in bits, not bytes.
 void bitmapSet(byte *bitmap, uint64_t pos) {
 /* sets bit at pos to 1 */
     set(&bitmap[pos/BIT], pos%BIT);
 }
 
+// this sets a single bit in the passed-in byte array to 0. It is
+// up to the user to ensure that position is within the range of the
+// size of the bitmap. Position is in bits, not bytes.
 void bitmapReset(byte *bitmap, uint64_t pos) {
 /* sets bit at pos to 0 */
     reset(&bitmap[pos/BIT], pos%BIT);
@@ -95,6 +110,10 @@ static void reset(byte *a, byte pos) {
     *a &= ~(1 << pos);
 }
 
+// this returns the location of the first [range] zero bits in the byte array
+// with the range to search limited by blockCount. If the value isn't found in the 
+// blockCount it returns blockCount basically indicating that there is no free
+// space of that size found in the bitmap
 uint64_t bitmapFirstFreeRange(byte * bitmap, uint64_t blockCount, uint64_t range){
 
     for(uint64_t i = 0; i < blockCount; i++){
@@ -112,6 +131,5 @@ uint64_t bitmapFirstFreeRange(byte * bitmap, uint64_t blockCount, uint64_t range
     }
 
     return blockCount;
-
 
 }
