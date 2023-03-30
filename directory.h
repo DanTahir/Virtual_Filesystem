@@ -39,13 +39,24 @@ typedef struct Dir {
 } Dir;
 
 Dir * workingDir;
-
+// creates a new directory
 uint64_t dirInitNew(Dir * dir, uint64_t parentDirLoc, uint64_t blockCount, uint64_t blockSize);
+// writes a directory to volume
 void dirWrite(Dir * dir, uint64_t location, uint64_t blockCount, uint64_t blockSize);
+// reads a directory from volume
 void dirRead(Dir * dir, uint64_t location, uint64_t blockCount, uint64_t blockSize);
+// set the working directory to a given volume location
 void dirSetWorking(uint64_t location, uint64_t blockCount, uint64_t blockSize);
+// reread the working directory from the volume
 void dirResetWorking(uint64_t blockCount, uint64_t blockSize);
+// allocate memory for the working directory and set it
 void dirInitWorking(uint64_t location, uint64_t blockCount, uint64_t blockSize);
+// free the working directory's memory
 void dirFreeWorking();
+// advance a directory to a given position on the directory tree, returning the last node in the
+// path as a string (which must be allocated memory)
 int dirTraversePath(Dir * dir, const char * pathName, char * endName);
+// this copies the working directory to the passed-in directory so
+// the passed-in directory can be traversed without changing the
+// working directory
 void dirCopyWorking(Dir * dir);
