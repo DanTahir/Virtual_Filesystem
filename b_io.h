@@ -15,6 +15,7 @@
 #ifndef _B_IO_H
 #define _B_IO_H
 #include <fcntl.h>
+#include "mfs.h"
 
 typedef int b_io_fd;
 

@@ -39,6 +39,7 @@ typedef struct Dir {
 } Dir;
 
 Dir * workingDir;
+
 // creates a new directory
 uint64_t dirInitNew(Dir * dir, uint64_t parentDirLoc, uint64_t blockCount, uint64_t blockSize);
 // writes a directory to volume
