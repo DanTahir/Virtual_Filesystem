@@ -28,8 +28,11 @@ typedef struct b_fcb
 	{
 	/** TODO add al the information you need in the file control block **/
 	char * buf;		//holds the open file buffer
-	int index;		//holds the current position in the buffer
-	int buflen;		//holds how many valid bytes are in the buffer
+	uint64_t index;		//holds the current position in the buffer
+	uint64_t buflen;		//holds how many valid bytes are in the buffer
+	Dir * dir;
+	int dirPos;
+	int flags;
 	} b_fcb;
 	
 b_fcb fcbArray[MAXFCBS];
@@ -76,6 +79,79 @@ b_io_fd b_open (char * filename, int flags)
 	
 	returnFd = b_getFCB();				// get our own file descriptor
 										// check for error - all used FCB's
+	if(returnFd == -1){
+		return(-1);
+	}
+	int i;
+	for (i = 2; i < MAXDIRENTRIES; i++){
+		int strcmpVal = strncmp(workingDir->dirEntries[i].name, filename, NAMELEN - 1);
+		if(strcmpVal == 0){
+			break;
+		}
+	}
+	if (i == MAXDIRENTRIES){
+		if(flags & O_CREAT){
+			for (i = 2; i < MAXDIRENTRIES; i++){
+				if(workingDir->dirEntries[i].name[0] == '\0'){
+					break;
+				}
+			}
+			if (i == MAXDIRENTRIES){
+				printf("Directory full\n");
+				return -1;
+			}
+			strncpy(workingDir->dirEntries[i].name, filename, NAMELEN - 1);
+			workingDir->dirEntries[i].location = 0;
+			workingDir->dirEntries[i].size = 0;
+			workingDir->dirEntries[i].isDir = 0;
+			VCB * vcb = getVCBG();
+			dirWrite(workingDir, 
+				workingDir->dirEntries[0].location, 
+				vcb->blockCount, 
+				vcb->blockSize);
+			fcbArray[returnFd].dir = malloc(sizeof(Dir));
+			dirCopyWorking(fcbArray[returnFd].dir);
+			fcbArray[returnFd].dirPos = i;
+			fcbArray[returnFd].buf = malloc(1);
+			fcbArray[returnFd].buflen = 0;
+			fcbArray[returnFd].index = 0;
+			fcbArray[returnFd].flags = flags;
+			return (returnFd);
+
+		}
+		else{
+			printf("filename not found");
+			// filename not found
+			return -1;
+		}
+	}
+	if (flags & O_TRUNC){
+		VCB * vcb = getVCBG();
+		workingDir->dirEntries[i].size = 0;
+		dirWrite(workingDir, 
+			workingDir->dirEntries[0].location, 
+			vcb->blockCount, 
+			vcb->blockSize);
+		free(vcb);
+		vcb=NULL;
+	}
+	if(workingDir->dirEntries[i].size == 0){
+		fcbArray[returnFd].buf = malloc(1);
+	}
+	else{
+		fcbArray[returnFd].buf = malloc(workingDir->dirEntries[i].size);
+	}
+
+	fileRead(fcbArray[returnFd].buf, 
+		workingDir->dirEntries[i].size, 
+		workingDir->dirEntries[i].location);
+	fcbArray[returnFd].buflen = workingDir->dirEntries[i].size;
+	fcbArray[returnFd].index = 0;
+	fcbArray[returnFd].dir = malloc(sizeof(Dir));
+	dirCopyWorking(fcbArray[returnFd].dir);
+	fcbArray[returnFd].dirPos = i;
+	fcbArray[returnFd].flags = flags;
+
 	
 	return (returnFd);						// all set
 	}

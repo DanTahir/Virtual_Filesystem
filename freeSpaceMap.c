@@ -116,7 +116,7 @@ static void reset(byte *a, byte pos) {
 // space of that size found in the bitmap
 uint64_t bitmapFirstFreeRange(byte * bitmap, uint64_t blockCount, uint64_t range){
 
-    for(uint64_t i = 0; i < blockCount; i++){
+    for(uint64_t i = 0; i < blockCount - range; i++){
         if (bitmapGet(bitmap,i) == 0){
             uint64_t freeStart = i;
             for(i = i; i < freeStart + range; i++){
@@ -132,4 +132,50 @@ uint64_t bitmapFirstFreeRange(byte * bitmap, uint64_t blockCount, uint64_t range
 
     return blockCount;
 
+}
+
+uint64_t bitmapFirstFreeFilespace(uint64_t fileSize){
+    VCB * vcb = getVCBG();
+    byte * bitmap = malloc(roundUpDiv(vcb->blockCount, BIT));
+    uint64_t range = roundUpDiv(fileSize, vcb->blockSize);
+    uint64_t freeLocation = bitmapFirstFreeRange(bitmap, vcb->blockCount, range);
+    free(vcb);
+    vcb=NULL;
+    free(bitmap);
+    bitmap = NULL;
+    return freeLocation;
+}
+
+int bitmapFreeFileSpace(uint64_t fileSize, uint64_t location){
+    VCB * vcb = getVCBG();
+
+    byte * bitmap = malloc(roundUpDiv(vcb->blockCount,BIT));
+    bitmapRead(bitmap, vcb->blockCount, vcb->blockSize);
+    uint64_t blocksToFree = roundUpDiv(fileSize, vcb->blockSize);
+    bitmapRangeReset(bitmap, location, blocksToFree);
+    bitmapWrite(bitmap, vcb->blockCount, vcb->blockSize);
+
+
+
+    free(vcb);
+    vcb = NULL;
+
+    return 0;
+}
+
+int bitmapAllocFileSpace(uint64_t fileSize, uint64_t location){
+        VCB * vcb = getVCBG();
+
+    byte * bitmap = malloc(roundUpDiv(vcb->blockCount,BIT));
+    bitmapRead(bitmap, vcb->blockCount, vcb->blockSize);
+    uint64_t blocksToFree = roundUpDiv(fileSize, vcb->blockSize);
+    bitmapRangeSet(bitmap, location, blocksToFree);
+    bitmapWrite(bitmap, vcb->blockCount, vcb->blockSize);
+
+
+
+    free(vcb);
+    vcb = NULL;
+
+    return 0;
 }

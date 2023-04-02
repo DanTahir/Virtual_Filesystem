@@ -22,7 +22,7 @@
 #include <string.h>
 
 #include "fsLow.h"
-#include "b_io.h"
+#include "mfs.h"
 
 
 
@@ -137,6 +137,18 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 	for(int i = 0; i < MAXDIRENTRIES; i++){
 		if(workingDir->dirEntries[i].name[0] != '\0'){
 			printf("Entry in working directory - %s\n", workingDir->dirEntries[i].name);
+		}
+	}
+	printf("creating newfile (if it doesn't already exist)\n");
+	int bOpenReturn = b_open("newfile", O_CREAT);
+	printf("b_open returns %d\n", bOpenReturn);
+	printf("creating newfile2 (if it doesn't already exist)\n");
+	bOpenReturn = b_open("newfile2", O_CREAT);
+	printf("b_open returns %d\n", bOpenReturn);
+	for(int i = 0; i < MAXDIRENTRIES; i++){
+		if(workingDir->dirEntries[i].name[0] != '\0'){
+			printf("Entry in working directory - %s\n", workingDir->dirEntries[i].name);
+			printf("size: %lu, location: %lu\n", workingDir->dirEntries[i].size, workingDir->dirEntries[i].location);
 		}
 	}
 

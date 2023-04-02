@@ -46,3 +46,9 @@ void bitmapReset     (byte * bitmap, uint64_t pos);
 int  bitmapSearch    (byte * bitmap, bool n, uint64_t size, uint64_t start);
 // return the location of the first span of range length bits set to 0
 uint64_t bitmapFirstFreeRange(byte * bitmap, uint64_t blockCount, uint64_t range);
+// returns the location of the first span of roundUpDiv(filesize/blockSize) bits set to empty
+uint64_t bitmapFirstFreeFilespace(uint64_t fileSize);
+// read bitmap from disk, free filespace, write bitmap to disk
+int bitmapFreeFileSpace(uint64_t fileSize, uint64_t location);
+// read bitmap from disk, allocate filespace, write bitmap to disk
+int bitmapAllocFileSpace(uint64_t fileSize, uint64_t location);
