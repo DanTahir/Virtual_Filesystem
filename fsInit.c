@@ -139,18 +139,62 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 			printf("Entry in working directory - %s\n", workingDir->dirEntries[i].name);
 		}
 	}
-	printf("creating newfile (if it doesn't already exist)\n");
-	int bOpenReturn = b_open("newfile", O_CREAT);
-	printf("b_open returns %d\n", bOpenReturn);
-	printf("creating newfile2 (if it doesn't already exist)\n");
-	bOpenReturn = b_open("newfile2", O_CREAT);
-	printf("b_open returns %d\n", bOpenReturn);
+	printf("opening newfile without a write flag (creating if it doesn't already exist)\n");
+	int bOpenReturn1 = b_open("newfile", O_CREAT);
+	printf("b_open returns %d\n", bOpenReturn1);
+	printf("opening newfile2 with a write flag (creating if it doesn't already exist)\n");
+	int bOpenReturn2 = b_open("newfile2", O_CREAT | O_RDWR);
+	printf("b_open returns %d\n", bOpenReturn2);
 	for(int i = 0; i < MAXDIRENTRIES; i++){
 		if(workingDir->dirEntries[i].name[0] != '\0'){
 			printf("Entry in working directory - %s\n", workingDir->dirEntries[i].name);
 			printf("size: %lu, location: %lu\n", workingDir->dirEntries[i].size, workingDir->dirEntries[i].location);
 		}
 	}
+
+	char aString[64] = "By happenstance it seems to me the filligree meanders vexingly.";
+	printf("Writing to newfile\n");	
+	int bWriteReturn1 = b_write(bOpenReturn1, aString, 64);
+	printf("b_write returns %d\n", bWriteReturn1);
+	printf("Writing to newfile2\n");	
+	int bWriteReturn2 = b_write(bOpenReturn2, aString, 64);
+	printf("b_write returns %d\n", bWriteReturn2);
+	for(int i = 0; i < MAXDIRENTRIES; i++){
+		if(workingDir->dirEntries[i].name[0] != '\0'){
+			printf("Entry in working directory - %s\n", workingDir->dirEntries[i].name);
+			printf("size: %lu, location: %lu\n", workingDir->dirEntries[i].size, workingDir->dirEntries[i].location);
+		}
+	}
+	printf("closing newfile\n");
+	b_close(bOpenReturn1);
+	printf("closing newfile2\n");
+	b_close(bOpenReturn2);
+	printf("opening newfile without a read flag\n");
+	bOpenReturn1 = b_open("newfile", O_WRONLY);
+	printf("b_open returns %d\n", bOpenReturn1);
+	char aString2[64];
+	printf("reading from newfile\n");
+	int bReadReturn1 = b_read(bOpenReturn1, aString2, 64);
+	printf("b_read returns %d\n", bReadReturn1);
+	printf("closing newfile\n");
+	b_close(bOpenReturn1);	
+	printf("opening newfile with a read flag\n");
+	bOpenReturn1 = b_open("newfile", O_RDONLY);
+	printf("reading from newfile\n");
+	bReadReturn1 = b_read(bOpenReturn1, aString2, 64);
+	printf("b_read returns %d\n", bReadReturn1);
+
+
+	printf("opening newfile2 with a read flag \n");
+	bOpenReturn2 = b_open("newfile2", O_RDONLY);
+	printf("b_open returns %d\n", bOpenReturn2);
+	printf("reading twice from newfile2\n");
+	int bReadReturn2 = b_read(bOpenReturn2, aString2, 32);
+	printf("b_read returns %d\n", bReadReturn2);
+	printf("b_read prints: %s\n", aString2);
+	bReadReturn2 = b_read(bOpenReturn2, aString2, 32);
+	printf("b_read returns %d\n", bReadReturn2);
+	printf("b_read prints: %s\n", aString2);
 
 	free(vcb);
 	vcb=NULL;

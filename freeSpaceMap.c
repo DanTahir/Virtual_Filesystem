@@ -130,7 +130,7 @@ uint64_t bitmapFirstFreeRange(byte * bitmap, uint64_t blockCount, uint64_t range
         }
     }
 
-    return blockCount;
+    return 0;
 
 }
 

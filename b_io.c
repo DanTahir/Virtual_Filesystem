@@ -125,6 +125,10 @@ b_io_fd b_open (char * filename, int flags)
 			return -1;
 		}
 	}
+	if(workingDir->dirEntries[i].isDir == 1){
+		printf("directory selected\n");
+		return -1;
+	}
 	if (flags & O_TRUNC){
 		VCB * vcb = getVCBG();
 		workingDir->dirEntries[i].size = 0;
@@ -184,9 +188,62 @@ int b_write (b_io_fd fd, char * buffer, int count)
 		{
 		return (-1); 					//invalid file descriptor
 		}
+	if(!(fcbArray[fd].flags & O_WRONLY) && !(fcbArray[fd].flags & O_RDWR)){
+		printf("write mode flag not set\n");
+		return -1;
+	}
+	VCB * vcb = getVCBG();
+	dirRead(fcbArray[fd].dir, 
+		fcbArray[fd].dir->dirEntries[0].location, 
+		vcb->blockCount, 
+		vcb->blockSize);
+
+	if(fcbArray[fd].buflen < fcbArray[fd].index + count){
+		//TODO: do a lot of complicated stuff here
+		free(fcbArray[fd].buf);
+		fcbArray[fd].buf = NULL;
+		fcbArray[fd].buf = malloc (fcbArray[fd].index + count);
+		uint64_t location = fcbArray[fd].dir->dirEntries[fcbArray[fd].dirPos].location;
+		fileRead(fcbArray[fd].buf, 
+			fcbArray[fd].buflen, 
+			location);
+		bitmapFreeFileSpace(fcbArray[fd].buflen, location);
+		location = bitmapFirstFreeFilespace(fcbArray[fd].index + count);
+		if(location == 0){
+			printf("Volume full\n");
+			free(vcb);
+			return -1;
+		}
+		memcpy(fcbArray[fd].buf + fcbArray[fd].index, buffer, count);
+		fcbArray[fd].buflen = fcbArray[fd].index + count;
+		bitmapAllocFileSpace(fcbArray[fd].buflen, location);
+		fileWrite(fcbArray[fd].buf, fcbArray[fd].buflen, location);
+
+		fcbArray[fd].dir->dirEntries[fcbArray[fd].dirPos].location = location;
+		fcbArray[fd].dir->dirEntries[fcbArray[fd].dirPos].size = fcbArray[fd].buflen;
 		
-		
-	return (0); //Change this
+		dirWrite(fcbArray[fd].dir, 
+			fcbArray[fd].dir->dirEntries[0].location, 
+			vcb->blockCount, 
+			vcb->blockSize);
+
+		dirResetWorking(vcb->blockCount, vcb->blockSize);
+
+		int bytesWritten = (fcbArray[fd].buflen < fcbArray[fd].index) ?
+			fcbArray[fd].index + count - fcbArray[fd].buflen : count;
+
+		free(vcb);
+		return bytesWritten;
+	}
+	
+	memcpy(fcbArray[fd].buf + fcbArray[fd].index, buffer, count);
+	fileWrite(fcbArray[fd].buf, 
+		fcbArray[fd].buflen, 
+		fcbArray[fd].dir->dirEntries[fcbArray[fd].dirPos].location);
+	fcbArray[fd].index = fcbArray[fd].index + count;
+
+	free(vcb);
+	return count; //Change this
 	}
 
 
@@ -220,12 +277,32 @@ int b_read (b_io_fd fd, char * buffer, int count)
 		{
 		return (-1); 					//invalid file descriptor
 		}
-		
-	return (0);	//Change this
+	if (!((fcbArray[fd].flags & O_ACCMODE) == O_RDONLY) && !(fcbArray[fd].flags & O_RDWR)){
+		printf("read flag not set\n");
+		return -1;
+	}
+
+	int myCount = (fcbArray[fd].buflen < fcbArray[fd].index + count) ?
+		fcbArray[fd].buflen - fcbArray[fd].index : count;
+	if (myCount < 0){
+		myCount = 0;
+	}
+
+	memcpy(buffer, fcbArray[fd].buf + fcbArray[fd].index, myCount);
+	fcbArray[fd].index = fcbArray[fd].index + myCount;
+
+	return myCount;	//Change this
 	}
 	
 // Interface to Close the file	
 int b_close (b_io_fd fd)
 	{
-
+		free(fcbArray[fd].buf);
+		fcbArray[fd].buf = NULL;
+		free(fcbArray[fd].dir);
+		fcbArray[fd].dir = NULL;
+		fcbArray[fd].buflen = 0;
+		fcbArray[fd].dirPos = 0;
+		fcbArray[fd].index = 0;
+		fcbArray[fd].flags = 0;
 	}

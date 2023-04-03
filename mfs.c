@@ -61,6 +61,11 @@ int fs_mkdir(const char *pathname, mode_t mode){
         vcb->blockCount, 
         vcb->blockSize);
 
+    if (dir->dirEntries[i].location == 0){
+        printf("volume full\n");
+        return -1;
+    }
+
     dirWrite(dir, dir->dirEntries[0].location, vcb->blockCount, vcb->blockSize);
     dirResetWorking(vcb->blockCount, vcb->blockSize);
 

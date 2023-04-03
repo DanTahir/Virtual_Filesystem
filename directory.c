@@ -35,6 +35,10 @@ uint64_t dirInitNew(Dir * dir, uint64_t parentDirLoc, uint64_t blockCount, uint6
     byte * bitmap = malloc(roundUpDiv(blockCount, BIT));
     bitmapRead(bitmap, blockCount, blockSize);
     uint64_t freeSpace = bitmapFirstFreeRange(bitmap, blockCount, dirInBlocks);
+    if(freeSpace == 0){
+        printf("volume full\n");
+        return freeSpace;
+    }
     bitmapRangeSet(bitmap, freeSpace, dirInBlocks);
     bitmapWrite(bitmap, blockCount, blockSize);
 
