@@ -204,22 +204,24 @@ int b_write (b_io_fd fd, char * buffer, int count)
 
 	if(fcbArray[fd].buflen < fcbArray[fd].index + count){
 		//TODO: do a lot of complicated stuff here
-		free(fcbArray[fd].buf);
-		fcbArray[fd].buf = NULL;
-		fcbArray[fd].buf = malloc (fcbArray[fd].index + count);
-		uint64_t location = fcbArray[fd].dir->dirEntries[fcbArray[fd].dirPos].location;
-		fileRead(fcbArray[fd].buf, 
-			fcbArray[fd].buflen, 
-			location);
-		bitmapFreeFileSpace(fcbArray[fd].buflen, location);
-		uint64_t oldLocation = location;
-		location = bitmapFirstFreeFilespace(fcbArray[fd].index + count);
+
+		uint64_t oldLocation = fcbArray[fd].dir->dirEntries[fcbArray[fd].dirPos].location;
+
+		bitmapFreeFileSpace(fcbArray[fd].buflen, oldLocation);
+
+		uint64_t location = bitmapFirstFreeFilespace(fcbArray[fd].index + count);
 		if(location == 0){
 			printf("Volume full\n");
 			bitmapAllocFileSpace(fcbArray[fd].buflen, oldLocation);
 			free(vcb);
 			return -1;
 		}
+		free(fcbArray[fd].buf);
+		fcbArray[fd].buf = NULL;
+		fcbArray[fd].buf = malloc (fcbArray[fd].index + count);
+		fileRead(fcbArray[fd].buf, 
+			fcbArray[fd].buflen, 
+			oldLocation);		
 		memcpy(fcbArray[fd].buf + fcbArray[fd].index, buffer, count);
 		fcbArray[fd].buflen = fcbArray[fd].index + count;
 		bitmapAllocFileSpace(fcbArray[fd].buflen, location);
