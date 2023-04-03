@@ -171,9 +171,19 @@ int b_seek (b_io_fd fd, off_t offset, int whence)
 		{
 		return (-1); 					//invalid file descriptor
 		}
+	if (whence == SEEK_SET){
+		fcbArray[fd].index = 0;
+	}
+	else if(whence == SEEK_CUR){
+		fcbArray[fd].index = fcbArray[fd].index;
+	}
+	else if (whence == SEEK_END){
+		fcbArray[fd].index = fcbArray[fd].buflen;
+	}
+
+	fcbArray[fd].index = fcbArray[fd].index + offset;
 		
-		
-	return (0); //Change this
+	return fcbArray[fd].index; //Change this
 	}
 
 
