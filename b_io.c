@@ -192,6 +192,10 @@ int b_write (b_io_fd fd, char * buffer, int count)
 		printf("write mode flag not set\n");
 		return -1;
 	}
+	if(fcbArray[fd].flags & O_APPEND){
+		fcbArray[fd].index = fcbArray[fd].buflen;
+	}
+
 	VCB * vcb = getVCBG();
 	dirRead(fcbArray[fd].dir, 
 		fcbArray[fd].dir->dirEntries[0].location, 
@@ -208,9 +212,11 @@ int b_write (b_io_fd fd, char * buffer, int count)
 			fcbArray[fd].buflen, 
 			location);
 		bitmapFreeFileSpace(fcbArray[fd].buflen, location);
+		uint64_t oldLocation = location;
 		location = bitmapFirstFreeFilespace(fcbArray[fd].index + count);
 		if(location == 0){
 			printf("Volume full\n");
+			bitmapAllocFileSpace(fcbArray[fd].buflen, oldLocation);
 			free(vcb);
 			return -1;
 		}
