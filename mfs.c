@@ -19,7 +19,7 @@ int fs_mkdir(const char *pathname, mode_t mode){
     
     Dir * dir = malloc(sizeof(Dir));
     dirCopyWorking(dir);
-    char * dirToMake = malloc(NAMELEN);
+    char dirToMake[NAMELEN];
     int traverseReturn = dirTraversePath(dir, pathname, dirToMake);
     printf("dir to make - %s\n", dirToMake);
     if(traverseReturn == -1){
@@ -75,9 +75,7 @@ int fs_mkdir(const char *pathname, mode_t mode){
     free(dir);
     dir = NULL;
     free(newDir);
-    newDir = NULL; 
-    free(dirToMake);
-    dirToMake = NULL;  
+    newDir = NULL;   
 
     return 0; 
 
