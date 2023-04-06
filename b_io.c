@@ -82,9 +82,16 @@ b_io_fd b_open (char * filename, int flags)
 	if(returnFd == -1){
 		return(-1);
 	}
+
+	Dir * dir = malloc(sizeof(Dir));
+	dirCopyWorking(dir);
+	char realFileName[NAMELEN];
+	dirTraversePath(dir, filename, realFileName);
+
+
 	int i;
 	for (i = 2; i < MAXDIRENTRIES; i++){
-		int strcmpVal = strncmp(workingDir->dirEntries[i].name, filename, NAMELEN - 1);
+		int strcmpVal = strncmp(dir->dirEntries[i].name, realFileName, NAMELEN - 1);
 		if(strcmpVal == 0){
 			break;
 		}
@@ -92,7 +99,7 @@ b_io_fd b_open (char * filename, int flags)
 	if (i == MAXDIRENTRIES){
 		if(flags & O_CREAT){
 			for (i = 2; i < MAXDIRENTRIES; i++){
-				if(workingDir->dirEntries[i].name[0] == '\0'){
+				if(dir->dirEntries[i].name[0] == '\0'){
 					break;
 				}
 			}
@@ -100,17 +107,19 @@ b_io_fd b_open (char * filename, int flags)
 				printf("Directory full\n");
 				return -1;
 			}
-			strncpy(workingDir->dirEntries[i].name, filename, NAMELEN - 1);
-			workingDir->dirEntries[i].location = 0;
-			workingDir->dirEntries[i].size = 0;
-			workingDir->dirEntries[i].isDir = 0;
+			strncpy(dir->dirEntries[i].name, realFileName, NAMELEN - 1);
+			dir->dirEntries[i].location = 0;
+			dir->dirEntries[i].size = 0;
+			dir->dirEntries[i].isDir = 0;
 			VCB * vcb = getVCBG();
-			dirWrite(workingDir, 
-				workingDir->dirEntries[0].location, 
+			dirWrite(dir, 
+				dir->dirEntries[0].location, 
 				vcb->blockCount, 
 				vcb->blockSize);
-			fcbArray[returnFd].dir = malloc(sizeof(Dir));
-			dirCopyWorking(fcbArray[returnFd].dir);
+			dirResetWorking(vcb->blockCount, vcb->blockSize);
+			free(vcb);
+			vcb=NULL;
+			fcbArray[returnFd].dir = dir;
 			fcbArray[returnFd].dirPos = i;
 			fcbArray[returnFd].buf = malloc(1);
 			fcbArray[returnFd].buflen = 0;
@@ -125,34 +134,35 @@ b_io_fd b_open (char * filename, int flags)
 			return -1;
 		}
 	}
-	if(workingDir->dirEntries[i].isDir == 1){
+	if(dir->dirEntries[i].isDir == 1){
 		printf("directory selected\n");
 		return -1;
 	}
 	if (flags & O_TRUNC){
 		VCB * vcb = getVCBG();
-		workingDir->dirEntries[i].size = 0;
-		dirWrite(workingDir, 
-			workingDir->dirEntries[0].location, 
+		dir->dirEntries[i].size = 0;
+		dirWrite(dir, 
+			dir->dirEntries[0].location, 
 			vcb->blockCount, 
 			vcb->blockSize);
+		dirResetWorking(vcb->blockCount, vcb->blockSize);
 		free(vcb);
 		vcb=NULL;
+
 	}
-	if(workingDir->dirEntries[i].size == 0){
+	if(dir->dirEntries[i].size == 0){
 		fcbArray[returnFd].buf = malloc(1);
 	}
 	else{
-		fcbArray[returnFd].buf = malloc(workingDir->dirEntries[i].size);
+		fcbArray[returnFd].buf = malloc(dir->dirEntries[i].size);
 	}
 
 	fileRead(fcbArray[returnFd].buf, 
-		workingDir->dirEntries[i].size, 
-		workingDir->dirEntries[i].location);
-	fcbArray[returnFd].buflen = workingDir->dirEntries[i].size;
+		dir->dirEntries[i].size, 
+		dir->dirEntries[i].location);
+	fcbArray[returnFd].buflen = dir->dirEntries[i].size;
 	fcbArray[returnFd].index = 0;
-	fcbArray[returnFd].dir = malloc(sizeof(Dir));
-	dirCopyWorking(fcbArray[returnFd].dir);
+	fcbArray[returnFd].dir = dir;
 	fcbArray[returnFd].dirPos = i;
 	fcbArray[returnFd].flags = flags;
 
@@ -191,6 +201,7 @@ int b_seek (b_io_fd fd, off_t offset, int whence)
 // Interface to write function	
 int b_write (b_io_fd fd, char * buffer, int count)
 	{
+	printf("segfault test 0\n");
 	if (startup == 0) b_init();  //Initialize our system
 
 	// check that fd is between 0 and (MAXFCBS-1)
@@ -202,23 +213,25 @@ int b_write (b_io_fd fd, char * buffer, int count)
 		printf("write mode flag not set\n");
 		return -1;
 	}
+	printf("segfault test 1\n");
 	if(fcbArray[fd].flags & O_APPEND){
 		fcbArray[fd].index = fcbArray[fd].buflen;
 	}
 
 	VCB * vcb = getVCBG();
+		printf("segfault test 2\n");
 	dirRead(fcbArray[fd].dir, 
 		fcbArray[fd].dir->dirEntries[0].location, 
 		vcb->blockCount, 
 		vcb->blockSize);
-
+	printf("segfault test 3\n");
 	if(fcbArray[fd].buflen < fcbArray[fd].index + count){
 		//TODO: do a lot of complicated stuff here
 
 		uint64_t oldLocation = fcbArray[fd].dir->dirEntries[fcbArray[fd].dirPos].location;
-
+	printf("segfault test 3.5\n");
 		bitmapFreeFileSpace(fcbArray[fd].buflen, oldLocation);
-
+	printf("segfault test 4\n");
 		uint64_t location = bitmapFirstFreeFilespace(fcbArray[fd].index + count);
 		if(location == 0){
 			printf("Volume full\n");
@@ -226,6 +239,7 @@ int b_write (b_io_fd fd, char * buffer, int count)
 			free(vcb);
 			return -1;
 		}
+			printf("segfault test 5");
 		free(fcbArray[fd].buf);
 		fcbArray[fd].buf = NULL;
 		fcbArray[fd].buf = malloc (fcbArray[fd].index + count);
@@ -236,7 +250,7 @@ int b_write (b_io_fd fd, char * buffer, int count)
 		fcbArray[fd].buflen = fcbArray[fd].index + count;
 		bitmapAllocFileSpace(fcbArray[fd].buflen, location);
 		fileWrite(fcbArray[fd].buf, fcbArray[fd].buflen, location);
-
+	printf("segfault test 6");
 		fcbArray[fd].dir->dirEntries[fcbArray[fd].dirPos].location = location;
 		fcbArray[fd].dir->dirEntries[fcbArray[fd].dirPos].size = fcbArray[fd].buflen;
 		
@@ -246,19 +260,20 @@ int b_write (b_io_fd fd, char * buffer, int count)
 			vcb->blockSize);
 
 		dirResetWorking(vcb->blockCount, vcb->blockSize);
-
+	printf("segfault test 7");
 		int bytesWritten = (fcbArray[fd].buflen < fcbArray[fd].index) ?
 			fcbArray[fd].index + count - fcbArray[fd].buflen : count;
 
 		free(vcb);
 		return bytesWritten;
 	}
-	
+		printf("segfault test 8");
 	memcpy(fcbArray[fd].buf + fcbArray[fd].index, buffer, count);
 	fileWrite(fcbArray[fd].buf, 
 		fcbArray[fd].buflen, 
 		fcbArray[fd].dir->dirEntries[fcbArray[fd].dirPos].location);
 	fcbArray[fd].index = fcbArray[fd].index + count;
+		printf("segfault test 9");
 
 	free(vcb);
 	return count; //Change this
