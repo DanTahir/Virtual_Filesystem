@@ -105,6 +105,8 @@ b_io_fd b_open (char * filename, int flags)
 			}
 			if (i == MAXDIRENTRIES){
 				printf("Directory full\n");
+				free(dir);
+				dir=NULL;
 				return -1;
 			}
 			strncpy(dir->dirEntries[i].name, realFileName, NAMELEN - 1);
@@ -130,12 +132,15 @@ b_io_fd b_open (char * filename, int flags)
 		}
 		else{
 			printf("filename not found");
-			// filename not found
+			free(dir);
+			dir=NULL;
 			return -1;
 		}
 	}
 	if(dir->dirEntries[i].isDir == 1){
 		printf("directory selected\n");
+		free(dir);
+		dir=NULL;
 		return -1;
 	}
 	if (flags & O_TRUNC){
