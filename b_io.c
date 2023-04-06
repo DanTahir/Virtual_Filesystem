@@ -201,7 +201,6 @@ int b_seek (b_io_fd fd, off_t offset, int whence)
 // Interface to write function	
 int b_write (b_io_fd fd, char * buffer, int count)
 	{
-	printf("segfault test 0\n");
 	if (startup == 0) b_init();  //Initialize our system
 
 	// check that fd is between 0 and (MAXFCBS-1)
@@ -213,25 +212,20 @@ int b_write (b_io_fd fd, char * buffer, int count)
 		printf("write mode flag not set\n");
 		return -1;
 	}
-	printf("segfault test 1\n");
 	if(fcbArray[fd].flags & O_APPEND){
 		fcbArray[fd].index = fcbArray[fd].buflen;
 	}
 
 	VCB * vcb = getVCBG();
-		printf("segfault test 2\n");
 	dirRead(fcbArray[fd].dir, 
 		fcbArray[fd].dir->dirEntries[0].location, 
 		vcb->blockCount, 
 		vcb->blockSize);
-	printf("segfault test 3\n");
 	if(fcbArray[fd].buflen < fcbArray[fd].index + count){
 		//TODO: do a lot of complicated stuff here
 
 		uint64_t oldLocation = fcbArray[fd].dir->dirEntries[fcbArray[fd].dirPos].location;
-	printf("segfault test 3.5\n");
 		bitmapFreeFileSpace(fcbArray[fd].buflen, oldLocation);
-	printf("segfault test 4\n");
 		uint64_t location = bitmapFirstFreeFilespace(fcbArray[fd].index + count);
 		if(location == 0){
 			printf("Volume full\n");
@@ -239,7 +233,6 @@ int b_write (b_io_fd fd, char * buffer, int count)
 			free(vcb);
 			return -1;
 		}
-			printf("segfault test 5");
 		free(fcbArray[fd].buf);
 		fcbArray[fd].buf = NULL;
 		fcbArray[fd].buf = malloc (fcbArray[fd].index + count);
@@ -250,7 +243,6 @@ int b_write (b_io_fd fd, char * buffer, int count)
 		fcbArray[fd].buflen = fcbArray[fd].index + count;
 		bitmapAllocFileSpace(fcbArray[fd].buflen, location);
 		fileWrite(fcbArray[fd].buf, fcbArray[fd].buflen, location);
-	printf("segfault test 6");
 		fcbArray[fd].dir->dirEntries[fcbArray[fd].dirPos].location = location;
 		fcbArray[fd].dir->dirEntries[fcbArray[fd].dirPos].size = fcbArray[fd].buflen;
 		
@@ -260,20 +252,17 @@ int b_write (b_io_fd fd, char * buffer, int count)
 			vcb->blockSize);
 
 		dirResetWorking(vcb->blockCount, vcb->blockSize);
-	printf("segfault test 7");
 		int bytesWritten = (fcbArray[fd].buflen < fcbArray[fd].index) ?
 			fcbArray[fd].index + count - fcbArray[fd].buflen : count;
 
 		free(vcb);
 		return bytesWritten;
 	}
-		printf("segfault test 8");
 	memcpy(fcbArray[fd].buf + fcbArray[fd].index, buffer, count);
 	fileWrite(fcbArray[fd].buf, 
 		fcbArray[fd].buflen, 
 		fcbArray[fd].dir->dirEntries[fcbArray[fd].dirPos].location);
 	fcbArray[fd].index = fcbArray[fd].index + count;
-		printf("segfault test 9");
 
 	free(vcb);
 	return count; //Change this
