@@ -13,6 +13,7 @@
 **************************************************************/
 
 #include "mfs.h"
+#include <string.h>
 
 int fs_mkdir(const char *pathname, mode_t mode){
     
@@ -108,4 +109,83 @@ int fs_setcwd(char *pathname){
     vcb = NULL;
     return 0;
 
+}
+
+int fs_delete(char* path){
+/*
+load a directory current dir
+*/
+
+Dir * dir = malloc(sizeof(Dir));
+dirCopyWorking(dir);
+
+/*
+Search through each string token in the path name until the we reach the last token,
+The last token is the name of the desired file to delete 
+*/
+char* filename = NULL;
+char* token = strtok(path, "/");
+while (token != NULL) {
+    filename = token;
+    token = strtok(NULL, "/");
+}
+
+/*
+Traverse the file system to the exact location of the file and load the appropriate directory.
+if the entries in the proper directory have a matching name to the targeted file name free the struct
+*/
+dirTraversePath(dir, path, filename);
+for (int i = 0; i < MAXDIRENTRIES; i++) {
+    DirEntry* entry = &dir->dirEntries[i];
+
+    if (strcmp(entry->name, filename) == 0) {
+        free(entry);
+        return 1;
+    }
+}
+printf("Error file not found");
+return -1;
+
+}
+
+int fs_stat(const char *path, struct fs_stat *buf){
+/*
+load a directory based on the path provided 
+*/
+Dir * dir = malloc(sizeof(Dir));
+dirCopyWorking(dir);
+
+/*
+Search through each string token in the path name until the we reach the last token,
+The last token is the name of the desired file to delete 
+*/
+char* filename = NULL;
+char* token = strtok(path, "/");
+while (token != NULL) {
+    filename = token;
+    token = strtok(NULL, "/");
+}
+
+/*
+Traverse the file system to the exact location of the file and load the appropriate directory.
+if the entries in the proper directory have a matching name to the targeted file name free the struct
+*/
+DirEntry* entry;
+dirTraversePath(dir, path, filename);
+for (int i = 0; i < MAXDIRENTRIES; i++) {
+     entry = &dir->dirEntries[i];
+    if (strcmp(entry->name, filename) == 0) {
+        break;
+    }
+}
+
+VCB * vcb = getVCBG();
+buf->st_size=entry->size;   /* total size, in bytes */
+buf->st_blksize=vcb->blockCount; 		    /* blocksize for file system I/O */
+buf->st_blocks=vcb->blockSize;  		    /* number of 512B blocks allocated */
+
+buf->st_accesstime=0;   	    /* time of last access */
+buf->st_modtime=0;    	    /* time of last modification */
+buf->st_createtime=0;   	    /* time of last status change */
+free(vcb);
 }
