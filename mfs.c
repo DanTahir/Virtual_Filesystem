@@ -119,7 +119,7 @@ load a directory current dir
 Dir * dir = malloc(sizeof(Dir));
 dirCopyWorking(dir);
 
-char* fileName[NAMELEN];
+char fileName[NAMELEN];
 
 /*
 Traverse the file system to the exact location of the file and load the appropriate directory.
@@ -130,7 +130,7 @@ for (int i = 0; i < MAXDIRENTRIES; i++) {
     DirEntry* entry = &dir->dirEntries[i];
 
     if (strcmp(entry->name, fileName) == 0) {
-        if(isDir(dir)){
+        if(entry->isDir == 1){
             printf("The requested file is a directory");
             return -1;
         }
@@ -153,7 +153,7 @@ dirCopyWorking(dir);
 Traverse the file system to the exact location of the file and load the appropriate directory.
 if the entries in the proper directory have a matching name to the targeted file name free the struct
 */
-char* filename[NAMELEN];
+char filename[NAMELEN];
 DirEntry* entry;
 dirTraversePath(dir, path, filename);
 for (int i = 0; i < MAXDIRENTRIES; i++) {
