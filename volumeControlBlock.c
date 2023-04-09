@@ -15,6 +15,14 @@
 
 #include "volumeControlBlock.h"
 
+/*
+* Function: isVCBSet()
+* This function checks whether Volume Control Block
+* is Set or Not. For this the first thing it need to 
+* do is compare the signature wit the our predefined
+* signature. If it matches, then we can say it is
+* Set otherwise Not Set.
+*/
 uint64_t isVCBSet(uint64_t blockSize){
 
     globalBlockSize = blockSize;
@@ -44,6 +52,13 @@ uint64_t isVCBSet(uint64_t blockSize){
     return 0;
 }
 
+/*
+* Function: setVCB()
+* Description: In this Function we basically do the formatting 
+* of the disk. For this, we initialize the Volume Control
+* Block by setting appropriate values to the members of VCB
+* structure. LBAwrite() would write the data into the disk
+*/
 uint64_t setVCB(uint64_t blockCount, uint64_t blockSize){
     VCB * vcb = malloc(sizeof(VCB));
 
@@ -66,6 +81,12 @@ uint64_t setVCB(uint64_t blockCount, uint64_t blockSize){
 
 }
 
+/*
+* Function: getVCB()
+* Description: In this Function we return the structure 
+* of the Volume Control Block by basically reading the 
+* block from the disk.
+*/
 VCB * getVCB(uint64_t blockSize){
     void * tempBuffer = malloc(blockSize);
 
