@@ -221,10 +221,11 @@ fdDir * fs_opendir(const char *pathname){
     return NULL;
 }
 
-int fs_closedir(fdDir* dirp) {
+int fs_closeddir(fdDir* dirp) {
     if (dirp == NULL) {
         return -1;
     }
     dirFree(dirp);
+    free(dirp);
     return 0;
 }
