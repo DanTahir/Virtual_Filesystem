@@ -229,3 +229,31 @@ int fs_closeddir(fdDir* dirp) {
     free(dirp);
     return 0;
 }
+
+struct fs_diriteminfo *fs_readdir(fdDir *dirp){
+    if(dirp==NULL) {
+        return NULL;
+    }
+
+    Dir* dir = malloc(sizeof(dir));
+
+
+    //Iterate to found a non empty DE based on name
+    int i;
+    for(i = 0; i < MAXDIRENTRIES; i++){
+        if (dir->dirEntries[i].name[0] == '\0'){
+            break;
+        }
+    }
+
+
+    if(i == MAXDIRENTRIES){
+        printf("dir full");
+        free(dir);
+        dir = NULL;
+        return -1;
+    }
+
+   //Read directory here
+
+}
