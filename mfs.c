@@ -175,3 +175,48 @@ buf->st_createtime=0;   	                /* time of last status change */
 
 free(vcb);
 }
+
+
+
+// Returns a pointer to the "pathname" directory 
+fdDir * fs_opendir(const char *pathname){
+    VCB* vcb = getVCBG();
+    char dirToOpen[NAMELEN];
+    Dir* dir = malloc(sizeof(Dir));
+
+    int traverseReturn = dirTraversePath(dir,pathname,dirToOpen);
+    if(traverseReturn==-1){
+        //Error, free space and put pointer to NULL
+        printf("Traverse Failed");
+        free(dir);
+        dir=NULL;
+        return -1;
+    }
+
+    if(dirToOpen[0]=='\0'){
+            fdDir* myDir = malloc(sizeof(fdDir));
+            myDir->d_reclen = sizeof(fdDir) ;
+            myDir->dirEntryPosition = 0 ;
+            myDir->directoryStartLocation =dir->dirEntries[0].location;
+
+            free(dir);
+            return  myDir;
+    }
+
+    for(int i=0;i<MAXDIRENTRIES;i++){
+        //Check if name matches and is it a directory
+        if(strncmp(dir->dirEntries[i].name, dirToOpen, NAMELEN-1) && dir->dirEntries[i].isDir){
+            //Dir found, Load it into memory
+            fdDir* myDir = malloc(sizeof(fdDir));
+            myDir->d_reclen = sizeof(fdDir) ;
+            myDir->dirEntryPosition = 0 ;
+            myDir->directoryStartLocation =dir->dirEntries[i].location;
+            free(dir);
+            return myDir;
+            
+        }
+    }
+
+    free(dir);
+    return NULL;
+}
