@@ -225,6 +225,7 @@ int fs_closeddir(fdDir* dirp) {
     if (dirp == NULL) {
         return -1;
     }
+
     dirFree(dirp);
     free(dirp);
     return 0;
@@ -234,26 +235,52 @@ struct fs_diriteminfo *fs_readdir(fdDir *dirp){
     if(dirp==NULL) {
         return NULL;
     }
+    
 
-    Dir* dir = malloc(sizeof(dir));
+     VCB* vcb = getVCBG();
+     Dir* dir = malloc(sizeof(dir));
+
+    //dir read on the directory
+    //to the location pointed by dirp-> startlocation
+    //based on the number of entry position
 
 
-    //Iterate to found a non empty DE based on name
+    dirRead(dir,dirp->directoryStartLocation,vcb->blockCount,vcb->blockSize);
+    
+    
+    int dep = dirp->dirEntryPosition;
     int i;
-    for(i = 0; i < MAXDIRENTRIES; i++){
-        if (dir->dirEntries[i].name[0] == '\0'){
-            break;
+    for(i=0;i<MAXDIRENTRIES;i++){
+        if(dir->dirEntries[i].name[0]!='\0'){
+            dep--;
         }
+        if(dep==0) break;
     }
 
-
+    
     if(i == MAXDIRENTRIES){
         printf("dir full");
         free(dir);
         dir = NULL;
-        return -1;
+        return NULL;
     }
 
-   //Read directory here
+    //Read directory here
+    struct fs_diriteminfo* directory = malloc(sizeof(struct fs_diriteminfo));
+    strcpy(directory->d_name,dir->dirEntries[i].name);
+    directory->d_reclen = sizeof(struct fs_diriteminfo);
+    if(dir->dirEntries[i].isDir){
+        directory->fileType='d';
+    }
+    else{
+        directory->fileType='f';
+    }
+    free(dir);
+    dirp->dirEntryPosition++;
+    return directory;
 
+
+    
+
+   
 }
