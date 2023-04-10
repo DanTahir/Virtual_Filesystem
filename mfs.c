@@ -173,6 +173,8 @@ buf->st_accesstime=0;   	                /* time of last access */
 buf->st_modtime=0;    	                    /* time of last modification */
 buf->st_createtime=0;   	                /* time of last status change */
 
+buf->fileType=entry->isDir;
+
 free(vcb);
 }
 
@@ -283,4 +285,26 @@ struct fs_diriteminfo *fs_readdir(fdDir *dirp){
     
 
    
+}
+
+int fs_isDir(char* pathname){
+    struct fs_stat fileStat;
+    if(fs_stat(pathname,&fileStat)<0){
+        printf("Error during fs_stat");
+        //Have to add errro codes in fs_stat method
+    }
+    else{
+        return fileStat.fileType;
+    }
+}
+
+int fs_isFile(char* filename){
+    struct fs_stat fileStat;
+    if(fs_stat(filename,&fileStat)<0){
+        printf("Error during fs_stat");
+        //Have to add errro codes in fs_stat method
+    }
+    else{
+        return !fileStat.fileType;
+    }
 }
