@@ -345,3 +345,53 @@ int fs_isFile(char* filename){
         return !fileStat.fileType;
     }
 }
+
+// This function will remove the directory
+int fs_rmdir(const char *pathname)
+{
+    int ret;
+    struct fs_stat fileStat;
+
+    Dir * dir = malloc(sizeof(Dir));
+    dirCopyWorking(dir);
+
+    char dirToDelete[NAMELEN];
+    int traverseReturn = dirTraversePath(dir, pathname, dirToDelete);
+    printf("Dir to Delete - %s\n", dirToDelete);
+    if(traverseReturn != 0){
+        printf("Traverse path failed\n");
+        free(dir);
+        dir = NULL;
+        return PATH_NOT_FOUND;
+    }
+
+    ret = fs_stat(pathname, &fileStat);
+    if(ret < 0)
+    {
+        printf("Error in Getting the stats of the Directory\n");
+    }
+
+    if(fileStat.st_size != 0)
+    {
+        printf("Cannot Remove Directory, Directory Not Empty\n");
+        return DIR_NOT_EMPTY;
+    }
+
+
+    
+}
+
+// This function will return the current working directory
+// or the present working directory
+char * fs_getcwd(char *pathname, size_t size)
+{
+    printf("Pathname = %s and size = %d\n", pathname, size);
+    //Dir * dir = malloc(sizeof(Dir));
+    //dirCopyWorking(dir);
+
+    
+
+
+
+    //return workingDir->dirEntries->location;
+}
