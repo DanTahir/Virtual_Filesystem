@@ -125,42 +125,68 @@ char fileName[NAMELEN];
 Traverse the file system to the exact location of the file and load the appropriate directory.
 if the entries in the proper directory have a matching name to the targeted file name free the struct
 */
-dirTraversePath(dir, path, fileName);
+int traverseReturn = dirTraversePath(dir, path, fileName);
+if (traverseReturn = -1){
+    printf("path invalid\n");
+    return -1;
+}
 for (int i = 0; i < MAXDIRENTRIES; i++) {
     DirEntry* entry = &dir->dirEntries[i];
 
     if (strcmp(entry->name, fileName) == 0) {
         if(entry->isDir == 1){
             printf("The requested file is a directory");
+            free(dir);
             return -1;
         }
         bitmapFreeFileSpace(entry->size,entry->location);
-        free(entry);
-        return 1;
+        entry->name[0] = '\0';
+        entry->location = 0;
+        entry->size = 0;
+        VCB * vcb = getVCBG();
+        dirWrite(dir, dir->dirEntries[0].location, vcb->blockCount, vcb->blockSize);
+        dirResetWorking(vcb->blockCount, vcb->blockSize);
+        free(vcb);
+        free(dir)
+        return 0;
     }
 }
 printf("Error file not found");
+free(dir);
 return -1;
 }
 
 int fs_stat(const char *path, struct fs_stat *buf){
 /*
-load a directory based on the path provided 
+load a directory based on the working directory 
 */
 Dir * dir = malloc(sizeof(Dir));
 dirCopyWorking(dir);
 /*
-Traverse the file system to the exact location of the file and load the appropriate directory.
-if the entries in the proper directory have a matching name to the targeted file name free the struct
+Traverse the file system based on the path provided to the exact location of the file and load 
+the appropriate directory. if the entries in the proper directory have a matching name to the 
+targeted file name free the struct
 */
-char filename[NAMELEN];
+char fileName[NAMELEN];
 DirEntry* entry;
-dirTraversePath(dir, path, filename);
-for (int i = 0; i < MAXDIRENTRIES; i++) {
+int traverseReturn = dirTraversePath(dir, path, fileName);
+if (traverseReturn = -1){
+    printf("path invalid\n");
+    free(dir);
+    return -1;
+}
+int i;
+for (i = 0; i < MAXDIRENTRIES; i++) {
      entry = &dir->dirEntries[i];
-    if (strcmp(entry->name, filename) == 0) {
+    if (strcmp(entry->name, fileName) == 0) {
         break;
     }
+}
+
+if(i == MAXDIRENTRIES){
+    printf("file not found\n");
+    free(dir);
+    return -1;
 }
 
 VCB * vcb = getVCBG();
@@ -175,6 +201,7 @@ buf->st_createtime=0;   	                /* time of last status change */
 
 buf->fileType=entry->isDir;
 
+free(dir);
 free(vcb);
 }
 
