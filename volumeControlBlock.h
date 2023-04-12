@@ -22,7 +22,7 @@
 
 #include "fsLow.h"
 
-#define SIGNAT 29339303922
+#define SIGNAT 29339303911
 
 typedef struct VCB
 {
