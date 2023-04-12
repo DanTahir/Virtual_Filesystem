@@ -36,7 +36,7 @@ typedef struct VCB
 
 // we set this at initialization then use it when we need
 // to get the vcb
-uint64_t globalBlockSize;
+extern uint64_t globalBlockSize;
 
 // this checks whether the vcb is set, using the signature
 uint64_t isVCBSet(uint64_t blockSize);

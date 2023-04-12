@@ -15,6 +15,7 @@
 
 #include "directory.h"
 
+Dir * workingDir;
 
 // dirInitNew initializes a passed-in directory to a new state, then writes the passed-in
 // directory to disk, and returns its location so that it can be written to the parent

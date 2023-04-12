@@ -15,6 +15,8 @@
 
 #include "volumeControlBlock.h"
 
+uint64_t globalBlockSize;
+
 /*
 * Function: isVCBSet()
 * This function checks whether Volume Control Block
