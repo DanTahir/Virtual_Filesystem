@@ -385,7 +385,7 @@ int fs_rmdir(const char *pathname)
 // or the present working directory
 char * fs_getcwd(char *pathname, size_t size)
 {
-    printf("Pathname = %s and size = %d\n", pathname, size);
+    printf("Pathname = %s and size = %lu\n", pathname, size);
     //Dir * dir = malloc(sizeof(Dir));
     //dirCopyWorking(dir);
 
@@ -394,4 +394,5 @@ char * fs_getcwd(char *pathname, size_t size)
 
 
     //return workingDir->dirEntries->location;
+    // Mahek - this is wrong, you want to return pathname
 }
