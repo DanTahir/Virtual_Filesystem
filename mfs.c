@@ -386,6 +386,8 @@ int fs_rmdir(const char *pathname)
 char * fs_getcwd(char *pathname, size_t size)
 {
     printf("Pathname = %s and size = %lu\n", pathname, size);
+    // pathname is going to be empty here because it hasn't been
+    // filled with anything yet
     //Dir * dir = malloc(sizeof(Dir));
     //dirCopyWorking(dir);
 
@@ -394,5 +396,7 @@ char * fs_getcwd(char *pathname, size_t size)
 
 
     //return workingDir->dirEntries->location;
-    // Mahek - this is wrong, you want to return pathname
+    // Mahek - this is wrong, you want to return pathname after you
+    // fill it in with the working directory's path
+    // - Dan
 }
