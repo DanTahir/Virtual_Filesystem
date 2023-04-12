@@ -147,7 +147,7 @@ for (int i = 0; i < MAXDIRENTRIES; i++) {
         dirWrite(dir, dir->dirEntries[0].location, vcb->blockCount, vcb->blockSize);
         dirResetWorking(vcb->blockCount, vcb->blockSize);
         free(vcb);
-        free(dir)
+        free(dir);
         return 0;
     }
 }
@@ -213,22 +213,27 @@ fdDir * fs_opendir(const char *pathname){
     char dirToOpen[NAMELEN];
     Dir* dir = malloc(sizeof(Dir));
 
+    dirCopyWorking(dir);
+
     int traverseReturn = dirTraversePath(dir,pathname,dirToOpen);
     if(traverseReturn==-1){
         //Error, free space and put pointer to NULL
         printf("Traverse Failed");
         free(dir);
+        free(vcb);
         dir=NULL;
-        return -1;
+        vcb=NULL;
+        return NULL;
     }
 
     if(dirToOpen[0]=='\0'){
             fdDir* myDir = malloc(sizeof(fdDir));
             myDir->d_reclen = sizeof(fdDir) ;
-            myDir->dirEntryPosition = 0 ;
+            myDir->dirEntryPosition = 1 ;
             myDir->directoryStartLocation =dir->dirEntries[0].location;
 
             free(dir);
+            free(vcb);
             return  myDir;
     }
 
@@ -238,14 +243,16 @@ fdDir * fs_opendir(const char *pathname){
             //Dir found, Load it into memory
             fdDir* myDir = malloc(sizeof(fdDir));
             myDir->d_reclen = sizeof(fdDir) ;
-            myDir->dirEntryPosition = 0 ;
+            myDir->dirEntryPosition = 1;
             myDir->directoryStartLocation =dir->dirEntries[i].location;
             free(dir);
+            free(vcb);
             return myDir;
             
         }
     }
-
+    printf("dir not found or not a directory");
+    free(vcb);
     free(dir);
     return NULL;
 }
@@ -254,8 +261,6 @@ int fs_closeddir(fdDir* dirp) {
     if (dirp == NULL) {
         return -1;
     }
-
-    dirFree(dirp);
     free(dirp);
     return 0;
 }
@@ -288,7 +293,9 @@ struct fs_diriteminfo *fs_readdir(fdDir *dirp){
 
     
     if(i == MAXDIRENTRIES){
-        printf("dir full");
+        printf("entry not found\n");
+        free(vcb);
+        vcb = NULL;
         free(dir);
         dir = NULL;
         return NULL;
@@ -304,7 +311,10 @@ struct fs_diriteminfo *fs_readdir(fdDir *dirp){
     else{
         directory->fileType='f';
     }
+    free(vcb);
+    vcb = NULL;
     free(dir);
+    dir = NULL;
     dirp->dirEntryPosition++;
     return directory;
 
