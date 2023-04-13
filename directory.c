@@ -33,11 +33,25 @@ uint64_t dirInitNew(Dir * dir, uint64_t parentDirLoc, uint64_t blockCount, uint6
     // then we read from the bitmap to get the location of the new file and set its blocks
     // in the bitmap and write the bitmap;
     uint64_t freeSpace = bitmapFirstFreeFilespace(sizeof(Dir));
+    printf("sizeof(Dir) = %lu", sizeof(Dir));
+    printf("space returned by firstfreefilespace - %lu\n", freeSpace);
     if(freeSpace == 0){
         printf("volume full\n");
         return freeSpace;
     }
     bitmapAllocFileSpace(sizeof(Dir), freeSpace);
+    /*
+    uint64_t dirInBlocks = roundUpDiv(sizeof(Dir), blockSize);
+    byte * bitmap = malloc(roundUpDiv(blockCount, BIT));
+    bitmapRead(bitmap, blockCount, blockSize);
+    uint64_t freeSpace = bitmapFirstFreeRange(bitmap, blockCount, dirInBlocks);
+    if(freeSpace == 0){
+        printf("volume full\n");
+        return freeSpace;
+    }
+    bitmapRangeSet(bitmap, freeSpace, dirInBlocks);
+    bitmapWrite(bitmap, blockCount, blockSize);
+    */
 
     // Next we write the self entry for the directory
     strcpy(dir->dirEntries[0].name, ".");
@@ -54,9 +68,10 @@ uint64_t dirInitNew(Dir * dir, uint64_t parentDirLoc, uint64_t blockCount, uint6
     // Next we write the directory to volume
     dirWrite(dir, freeSpace, blockCount, blockSize);
 
+    /*
     free(bitmap);
     bitmap = NULL;
-
+    */
     // finally we return the location of the directory so the parent
     // directory can write its location.
     return freeSpace;

@@ -20,7 +20,7 @@
 
 #include "freeSpaceMap.h"
 
-#define MAXDIRENTRIES 30
+#define MAXDIRENTRIES 35
 #define NAMELEN 25
 
 typedef struct DirEntry {
