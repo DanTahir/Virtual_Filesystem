@@ -54,8 +54,9 @@ uint64_t dirInitNew(Dir * dir, uint64_t parentDirLoc, uint64_t blockCount, uint6
     // Next we write the directory to volume
     dirWrite(dir, freeSpace, blockCount, blockSize);
 
-    free(bitmap);
-    bitmap = NULL;
+    // Commenting Out as not Required for now
+    //free(bitmap);
+    //bitmap = NULL;
 
     // finally we return the location of the directory so the parent
     // directory can write its location.
