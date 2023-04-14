@@ -391,6 +391,33 @@ char * fs_getcwd(char *pathname, size_t size)
     //Dir * dir = malloc(sizeof(Dir));
     //dirCopyWorking(dir);
 
+    //use vcb to get location of root dir
+    VCB * vcb = getVCBG();
+    uint64_t rootDirLocation =vcb->rootDirStart;
+
+    //get current working dir
+    Dir * dir = malloc(sizeof(Dir));
+    dirCopyWorking(dir);
+
+    //tracks the path written to our pathname
+    int pathWritten = 0;
+
+    //loop through all parent entries and add slash each time
+    while(dir->dirEntries[0].location!=rootDirLocation){
+        pathname[pathWritten]='\\';
+        pathWritten++;
+        strcpy(pathname+pathWritten,dir->dirEntries[0].name);
+        pathWritten+=strlen(dir->dirEntries[0].name);
+        dirRead(dir,dir->dirEntries[1].location,vcb->blockCount,vcb->blockSize);
+    }
+
+
+    //add terminating character to pathname
+    pathname[pathWritten]='\0';
+    free(dir);
+
+    return pathname;
+
     
 
 
