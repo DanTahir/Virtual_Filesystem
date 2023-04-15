@@ -351,11 +351,16 @@ int fs_rmdir(const char *pathname)
 {
     int ret;
     struct fs_stat fileStat;
+    bool DirEmpty;
 
     Dir * dir = malloc(sizeof(Dir));
     dirCopyWorking(dir);
 
     char dirToDelete[NAMELEN];
+
+    //DirEntry* entry = &dir->dirEntries[i];
+
+    // Check for Valid Path
     int traverseReturn = dirTraversePath(dir, pathname, dirToDelete);
     printf("Dir to Delete - %s\n", dirToDelete);
     if(traverseReturn != 0){
@@ -365,20 +370,55 @@ int fs_rmdir(const char *pathname)
         return PATH_NOT_FOUND;
     }
 
-    ret = fs_stat(pathname, &fileStat);
-    if(ret < 0)
+    //DirEntry* entry;
+    /*for (int i = 0; i < MAXDIRENTRIES; i++) {
+        entry = &dir->dirEntries[i];
+        if (strcmp(entry->name, fileName) == 0) {
+            break;
+        }
+    }*/
+    
+    // Comparing the First Two Directory Entries
+    // First Dir Entry should be . (Current Directory)
+    // Second should be .. (Parent Directory)
+    if(strcmp(dir->dirEntries[0].name, ".") && strcmp(dir->dirEntries[1].name, ".."))
     {
-        printf("Error in Getting the stats of the Directory\n");
+        DirEmpty = true;
     }
 
-    if(fileStat.st_size != 0)
+    // Checking for the Rest of Entries. 
+    // To delete a directory, we should not have any other directories
+    for(int i=2; i < MAXDIRENTRIES; i++)
+    {
+        if (strcmp(dir->dirEntries[i].name, "") != 0) {
+            DirEmpty = false;
+            break;
+        }
+        else
+        {
+            DirEmpty = true;
+        }
+
+    }
+
+    if(DirEmpty == false)
     {
         printf("Cannot Remove Directory, Directory Not Empty\n");
         return DIR_NOT_EMPTY;
     }
-
-
+    else
+    {
+        // Initializing all the other directory entries to NULL 
+        for(int i=2; i < MAXDIRENTRIES; i++)
+        {
+            dir->dirEntries[i].name[0] = '\0';
+            dir->dirEntries[i].size = 0;
+            dir->dirEntries[i].used = false;
+        }
+        
+    }
     
+    return 0;
 }
 
 // This function will return the current working directory

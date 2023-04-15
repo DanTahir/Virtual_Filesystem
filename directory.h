@@ -29,6 +29,7 @@ typedef struct DirEntry {
     uint64_t location;
     uint64_t size;
     byte isDir;
+    bool used;
 
 } DirEntry;
 
