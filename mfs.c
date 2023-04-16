@@ -220,19 +220,21 @@ fdDir * fs_opendir(const char *pathname){
     }
 
     if(dirToOpen[0]=='\0'){
-            fdDir* myDir = malloc(sizeof(fdDir));
-            myDir->d_reclen = sizeof(fdDir) ;
-            myDir->dirEntryPosition = 1 ;
-            myDir->directoryStartLocation =dir->dirEntries[0].location;
+        printf("dir to open is blank\n");
+        fdDir* myDir = malloc(sizeof(fdDir));
+        myDir->d_reclen = sizeof(fdDir) ;
+        myDir->dirEntryPosition = 1 ;
+        myDir->directoryStartLocation =dir->dirEntries[0].location;
 
-            free(dir);
-            free(vcb);
-            return  myDir;
+        free(dir);
+        free(vcb);
+        return  myDir;
     }
+
 
     for(int i=0;i<MAXDIRENTRIES;i++){
         //Check if name matches and is it a directory
-        if(strncmp(dir->dirEntries[i].name, dirToOpen, NAMELEN-1) && dir->dirEntries[i].isDir){
+        if(strncmp(dir->dirEntries[i].name, dirToOpen, NAMELEN-1) == 0 && dir->dirEntries[i].isDir){
             //Dir found, Load it into memory
             fdDir* myDir = malloc(sizeof(fdDir));
             myDir->d_reclen = sizeof(fdDir) ;
@@ -250,7 +252,7 @@ fdDir * fs_opendir(const char *pathname){
     return NULL;
 }
 
-int fs_closeddir(fdDir* dirp) {
+int fs_closedir(fdDir* dirp) {
     if (dirp == NULL) {
         return -1;
     }
@@ -471,6 +473,10 @@ char * fs_getcwd(char *pathname, size_t size)
         }
         sprintf(pathname, "%s/%s", pathname, tokens[tokenCount]);
 
+    }
+
+    if(pathname[0] == '\0'){
+        strncpy(pathname, "/", size);
     }
 
 

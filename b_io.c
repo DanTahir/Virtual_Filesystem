@@ -319,6 +319,9 @@ int b_read (b_io_fd fd, char * buffer, int count)
 // Interface to Close the file	
 int b_close (b_io_fd fd)
 	{
+		if (fd < 0 || fd >= MAXFCBS){
+			return -1;
+		}
 		free(fcbArray[fd].buf);
 		fcbArray[fd].buf = NULL;
 		free(fcbArray[fd].dir);
@@ -327,4 +330,8 @@ int b_close (b_io_fd fd)
 		fcbArray[fd].dirPos = 0;
 		fcbArray[fd].index = 0;
 		fcbArray[fd].flags = 0;
+		return 0;
+
+
+
 	}
