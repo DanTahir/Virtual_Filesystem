@@ -83,10 +83,14 @@ b_io_fd b_open (char * filename, int flags)
 		return(-1);
 	}
 
-	Dir * dir = malloc(sizeof(Dir));
+	Dir * dir = dirInstance();
 	dirCopyWorking(dir);
 	char realFileName[NAMELEN];
-	dirTraversePath(dir, filename, realFileName);
+	int traverseReturn = dirTraversePath(dir, filename, realFileName);
+	if(traverseReturn == -1){
+		printf("invalid path\n");
+		return -1;
+	}
 
 
 	int i;
@@ -114,16 +118,13 @@ b_io_fd b_open (char * filename, int flags)
 			dir->dirEntries[i].size = 0;
 			dir->dirEntries[i].isDir = 0;
 			VCB * vcb = getVCBG();
-			dirWrite(dir, 
-				dir->dirEntries[0].location, 
-				vcb->blockCount, 
-				vcb->blockSize);
-			dirResetWorking(vcb->blockCount, vcb->blockSize);
+			dirWrite(dir, dir->dirEntries[0].location);
+			dirResetWorking();
 			free(vcb);
 			vcb=NULL;
 			fcbArray[returnFd].dir = dir;
 			fcbArray[returnFd].dirPos = i;
-			fcbArray[returnFd].buf = malloc(1);
+			fcbArray[returnFd].buf = fileInstance(1);
 			fcbArray[returnFd].buflen = 0;
 			fcbArray[returnFd].index = 0;
 			fcbArray[returnFd].flags = flags;
@@ -147,19 +148,17 @@ b_io_fd b_open (char * filename, int flags)
 		VCB * vcb = getVCBG();
 		dir->dirEntries[i].size = 0;
 		dirWrite(dir, 
-			dir->dirEntries[0].location, 
-			vcb->blockCount, 
-			vcb->blockSize);
-		dirResetWorking(vcb->blockCount, vcb->blockSize);
+			dir->dirEntries[0].location);
+		dirResetWorking();
 		free(vcb);
 		vcb=NULL;
 
 	}
 	if(dir->dirEntries[i].size == 0){
-		fcbArray[returnFd].buf = malloc(1);
+		fcbArray[returnFd].buf = fileInstance(1);
 	}
 	else{
-		fcbArray[returnFd].buf = malloc(dir->dirEntries[i].size);
+		fcbArray[returnFd].buf = fileInstance(dir->dirEntries[i].size);
 	}
 
 	fileRead(fcbArray[returnFd].buf, 
@@ -223,9 +222,7 @@ int b_write (b_io_fd fd, char * buffer, int count)
 
 	VCB * vcb = getVCBG();
 	dirRead(fcbArray[fd].dir, 
-		fcbArray[fd].dir->dirEntries[0].location, 
-		vcb->blockCount, 
-		vcb->blockSize);
+		fcbArray[fd].dir->dirEntries[0].location);
 	if(fcbArray[fd].buflen < fcbArray[fd].index + count){
 		//TODO: do a lot of complicated stuff here
 
@@ -240,7 +237,7 @@ int b_write (b_io_fd fd, char * buffer, int count)
 		}
 		free(fcbArray[fd].buf);
 		fcbArray[fd].buf = NULL;
-		fcbArray[fd].buf = malloc (fcbArray[fd].index + count);
+		fcbArray[fd].buf = fileInstance(fcbArray[fd].index + count);
 		fileRead(fcbArray[fd].buf, 
 			fcbArray[fd].buflen, 
 			oldLocation);		
@@ -252,11 +249,9 @@ int b_write (b_io_fd fd, char * buffer, int count)
 		fcbArray[fd].dir->dirEntries[fcbArray[fd].dirPos].size = fcbArray[fd].buflen;
 		
 		dirWrite(fcbArray[fd].dir, 
-			fcbArray[fd].dir->dirEntries[0].location, 
-			vcb->blockCount, 
-			vcb->blockSize);
+			fcbArray[fd].dir->dirEntries[0].location);
 
-		dirResetWorking(vcb->blockCount, vcb->blockSize);
+		dirResetWorking();
 		int bytesWritten = (fcbArray[fd].buflen < fcbArray[fd].index) ?
 			fcbArray[fd].index + count - fcbArray[fd].buflen : count;
 

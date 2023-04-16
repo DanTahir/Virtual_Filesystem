@@ -17,11 +17,25 @@
 
 Dir * workingDir;
 
+Dir * dirInstance(){
+    VCB * vcb = getVCBG();
+    Dir * dir = malloc(roundUpDiv(sizeof(Dir), vcb->blockSize)*vcb->blockSize);
+    free(vcb);
+    return dir;
+}
+
 // dirInitNew initializes a passed-in directory to a new state, then writes the passed-in
 // directory to disk, and returns its location so that it can be written to the parent
 // directory
-uint64_t dirInitNew(Dir * dir, uint64_t parentDirLoc, uint64_t blockCount, uint64_t blockSize){
+uint64_t dirInitNew(uint64_t parentDirLoc){
     
+    Dir * dir = dirInstance();
+    VCB * vcb = getVCBG();
+    uint64_t blockCount = vcb->blockCount;
+    uint64_t blockSize = vcb->blockSize;
+    free(vcb);
+    vcb=NULL;
+
     // first we blank all the directory entries
     for (int i = 0; i < MAXDIRENTRIES; i++){
         dir->dirEntries[i].name[0] = '\0';
@@ -37,6 +51,8 @@ uint64_t dirInitNew(Dir * dir, uint64_t parentDirLoc, uint64_t blockCount, uint6
     printf("space returned by firstfreefilespace - %lu\n", freeSpace);
     if(freeSpace == 0){
         printf("volume full\n");
+        free(dir);
+        dir=NULL;
         return freeSpace;
     }
     bitmapAllocFileSpace(sizeof(Dir), freeSpace);
@@ -66,7 +82,7 @@ uint64_t dirInitNew(Dir * dir, uint64_t parentDirLoc, uint64_t blockCount, uint6
     dir->dirEntries[1].isDir = 1;    
 
     // Next we write the directory to volume
-    dirWrite(dir, freeSpace, blockCount, blockSize);
+    dirWrite(dir, freeSpace);
 
     // Commenting Out as not Required for now
     //free(bitmap);
@@ -74,52 +90,65 @@ uint64_t dirInitNew(Dir * dir, uint64_t parentDirLoc, uint64_t blockCount, uint6
 
     // finally we return the location of the directory so the parent
     // directory can write its location.
+    free(dir);
+    dir = NULL;
     return freeSpace;
 
 
 }
 
 //dirWrite writes a directory to the volume 
-void dirWrite(Dir * dir, uint64_t location, uint64_t blockCount, uint64_t blockSize){
+void dirWrite(Dir * dir, uint64_t location){
+    
+    VCB * vcb = getVCBG();
 
-    uint64_t dirInBlocks = roundUpDiv(sizeof(Dir), blockSize);
+    uint64_t dirInBlocks = roundUpDiv(sizeof(Dir), vcb->blockSize);
+    LBAwrite(dir, dirInBlocks, location);
+    free(vcb);
+    vcb=NULL;    
+    /*
     uint64_t bufferSize = dirInBlocks * blockSize;
     void * tempBuffer = malloc(bufferSize);
     memcpy(tempBuffer, dir, sizeof(Dir));
     LBAwrite(tempBuffer, dirInBlocks, location);
     free(tempBuffer);
     tempBuffer = NULL;
-
+    */
 
 }
 
 //dirRead reads a directory from the volume
-void dirRead(Dir * dir, uint64_t location, uint64_t blockCount, uint64_t blockSize){
+void dirRead(Dir * dir, uint64_t location){
 
-    uint64_t dirInBlocks = roundUpDiv(sizeof(Dir), blockSize);
+    VCB * vcb = getVCBG();
+    uint64_t dirInBlocks = roundUpDiv(sizeof(Dir), vcb->blockSize);
+    LBAread(dir, dirInBlocks, location);
+    free(vcb);
+    vcb=NULL;
+    /*
     uint64_t bufferSize = dirInBlocks * blockSize;
     void * tempBuffer = malloc(bufferSize);
     LBAread(tempBuffer, dirInBlocks, location);
     memcpy(dir, tempBuffer, sizeof(Dir));
     free(tempBuffer);
     tempBuffer = NULL;
-
+    */
 }
 
 // this sets the working directory to a new location
-void dirSetWorking(uint64_t location, uint64_t blockCount, uint64_t blockSize){
-    dirRead(workingDir, location, blockCount, blockSize);
+void dirSetWorking(uint64_t location){
+    dirRead(workingDir, location);
 }
 
 // this rereads the working directory from its current location
-void dirResetWorking(uint64_t blockCount, uint64_t blockSize){
-    dirRead(workingDir, workingDir->dirEntries[0].location, blockCount, blockSize);
+void dirResetWorking(){
+    dirRead(workingDir, workingDir->dirEntries[0].location);
 }
 
 // this allocates memory for the working directory and then sets it
 void dirInitWorking(uint64_t location, uint64_t blockCount, uint64_t blockSize){
-    workingDir = malloc(sizeof(Dir));
-    dirRead(workingDir, location, blockCount, blockSize);
+    workingDir = dirInstance();
+    dirRead(workingDir, location);
 }
 // this frees the memory allocated for the working directory
 void dirFreeWorking(){
@@ -138,7 +167,7 @@ int dirTraversePath(Dir * dir, const char * pathName, char * endName){
 
     // check whether it's an absolute path or not
     if (pathNonConst[0] == '/'){
-        dirRead(dir, vcb->rootDirStart, vcb->blockCount, vcb->blockSize);
+        dirRead(dir, vcb->rootDirStart);
     }
     char * token = strtok(pathNonConst, "/");
 
@@ -162,7 +191,7 @@ int dirTraversePath(Dir * dir, const char * pathName, char * endName){
                 int compare = strcmp(token, dir->dirEntries[i].name);
                 if (compare == 0){
                     if(dir->dirEntries[i].isDir == 1){
-                        dirRead(dir, dir->dirEntries[i].location, vcb->blockCount, vcb->blockSize);
+                        dirRead(dir, dir->dirEntries[i].location);
                         break;
                     }
                     else{

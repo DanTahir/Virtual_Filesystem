@@ -41,16 +41,18 @@ typedef struct Dir {
 
 extern Dir * workingDir;
 
+// mallocs a Dir
+Dir * dirInstance();
 // creates a new directory
-uint64_t dirInitNew(Dir * dir, uint64_t parentDirLoc, uint64_t blockCount, uint64_t blockSize);
+uint64_t dirInitNew(uint64_t parentDirLoc);
 // writes a directory to volume
-void dirWrite(Dir * dir, uint64_t location, uint64_t blockCount, uint64_t blockSize);
+void dirWrite(Dir * dir, uint64_t location);
 // reads a directory from volume
-void dirRead(Dir * dir, uint64_t location, uint64_t blockCount, uint64_t blockSize);
+void dirRead(Dir * dir, uint64_t location);
 // set the working directory to a given volume location
-void dirSetWorking(uint64_t location, uint64_t blockCount, uint64_t blockSize);
+void dirSetWorking(uint64_t location);
 // reread the working directory from the volume
-void dirResetWorking(uint64_t blockCount, uint64_t blockSize);
+void dirResetWorking();
 // allocate memory for the working directory and set it
 void dirInitWorking(uint64_t location, uint64_t blockCount, uint64_t blockSize);
 // free the working directory's memory

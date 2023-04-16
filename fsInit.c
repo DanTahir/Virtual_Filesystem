@@ -49,7 +49,7 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 		VCB * vcb = getVCBG();
 		Dir * dir = malloc(sizeof(Dir));
 		printf("writing root directory\n");
-		dirInitNew(dir, vcb->rootDirStart, numberOfBlocks, blockSize);
+		dirInitNew(vcb->rootDirStart);
 
 
 
@@ -88,8 +88,8 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 
 		printf("size of dir: %lu\n", sizeof(Dir));
 		printf("getting root directory\n");
-		Dir * root = malloc(sizeof(Dir));
-		dirRead(root, vcb->rootDirStart, numberOfBlocks, blockSize);
+		Dir * root = dirInstance();
+		dirRead(root, vcb->rootDirStart);
 		printf("this\nname: %s\nlocation: %lu\n", root->dirEntries[0].name, root->dirEntries[0].location);
 		printf("parent\nname: %s\nlocation: %lu\n", root->dirEntries[1].name, root->dirEntries[1].location);
 

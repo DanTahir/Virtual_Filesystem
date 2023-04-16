@@ -18,7 +18,7 @@
 int fs_mkdir(const char *pathname, mode_t mode){
     
     
-    Dir * dir = malloc(sizeof(Dir));
+    Dir * dir = dirInstance();
     dirCopyWorking(dir);
     char dirToMake[NAMELEN];
     int traverseReturn = dirTraversePath(dir, pathname, dirToMake);
@@ -52,31 +52,25 @@ int fs_mkdir(const char *pathname, mode_t mode){
     }
 
     VCB * vcb = getVCBG();
-    Dir * newDir = malloc(sizeof(Dir));
 
     strncpy(dir->dirEntries[i].name, dirToMake, NAMELEN - 1);
     dir->dirEntries[i].isDir = 1;
     dir->dirEntries[i].size = sizeof(Dir);
-    dir->dirEntries[i].location = dirInitNew(newDir, 
-        dir->dirEntries[0].location, 
-        vcb->blockCount, 
-        vcb->blockSize);
+    dir->dirEntries[i].location = dirInitNew(dir->dirEntries[0].location);
 
     if (dir->dirEntries[i].location == 0){
         printf("volume full\n");
         return -1;
     }
 
-    dirWrite(dir, dir->dirEntries[0].location, vcb->blockCount, vcb->blockSize);
+    dirWrite(dir, dir->dirEntries[0].location);
     dirResetWorking(vcb->blockCount, vcb->blockSize);
 
 
     free(vcb);
     vcb = NULL;
     free(dir);
-    dir = NULL;
-    free(newDir);
-    newDir = NULL;   
+    dir = NULL;  
 
     return 0; 
 
@@ -103,10 +97,9 @@ int fs_setcwd(char *pathname){
     if (workingDir->dirEntries[i].isDir != 1){
         return -1;
     }
-    VCB * vcb = getVCBG();
-    dirSetWorking(workingDir->dirEntries[i].location, vcb->blockCount, vcb->blockSize);
-    free (vcb);
-    vcb = NULL;
+
+    dirSetWorking(workingDir->dirEntries[i].location);
+
     return 0;
 
 }
@@ -116,7 +109,7 @@ int fs_delete(char* path){
 load a directory current dir
 */
 
-Dir * dir = malloc(sizeof(Dir));
+Dir * dir = dirInstance();
 dirCopyWorking(dir);
 
 char fileName[NAMELEN];
@@ -144,7 +137,7 @@ for (int i = 0; i < MAXDIRENTRIES; i++) {
         entry->location = 0;
         entry->size = 0;
         VCB * vcb = getVCBG();
-        dirWrite(dir, dir->dirEntries[0].location, vcb->blockCount, vcb->blockSize);
+        dirWrite(dir, dir->dirEntries[0].location);
         dirResetWorking(vcb->blockCount, vcb->blockSize);
         free(vcb);
         free(dir);
@@ -160,7 +153,7 @@ int fs_stat(const char *path, struct fs_stat *buf){
 /*
 load a directory based on the working directory 
 */
-Dir * dir = malloc(sizeof(Dir));
+Dir * dir = dirInstance();
 dirCopyWorking(dir);
 /*
 Traverse the file system based on the path provided to the exact location of the file and load 
@@ -211,7 +204,7 @@ free(vcb);
 fdDir * fs_opendir(const char *pathname){
     VCB* vcb = getVCBG();
     char dirToOpen[NAMELEN];
-    Dir* dir = malloc(sizeof(Dir));
+    Dir* dir = dirInstance();
 
     dirCopyWorking(dir);
 
@@ -272,14 +265,14 @@ struct fs_diriteminfo *fs_readdir(fdDir *dirp){
     
 
      VCB* vcb = getVCBG();
-     Dir* dir = malloc(sizeof(dir));
+     Dir* dir = dirInstance();
 
     //dir read on the directory
     //to the location pointed by dirp-> startlocation
     //based on the number of entry position
 
 
-    dirRead(dir,dirp->directoryStartLocation,vcb->blockCount,vcb->blockSize);
+    dirRead(dir,dirp->directoryStartLocation);
     
     
     int dep = dirp->dirEntryPosition;
@@ -353,7 +346,7 @@ int fs_rmdir(const char *pathname)
     struct fs_stat fileStat;
     bool DirEmpty;
 
-    Dir * dir = malloc(sizeof(Dir));
+    Dir * dir = dirInstance();
     dirCopyWorking(dir);
 
     char dirToDelete[NAMELEN];
@@ -436,7 +429,7 @@ char * fs_getcwd(char *pathname, size_t size)
     uint64_t rootDirLocation =vcb->rootDirStart;
 
     //get current working dir
-    Dir * dir = malloc(sizeof(Dir));
+    Dir * dir = dirInstance();
     dirCopyWorking(dir);
 
     //tracks the path written to our pathname
@@ -448,7 +441,7 @@ char * fs_getcwd(char *pathname, size_t size)
         pathWritten++;
         strcpy(pathname+pathWritten,dir->dirEntries[0].name);
         pathWritten+=strlen(dir->dirEntries[0].name);
-        dirRead(dir,dir->dirEntries[1].location,vcb->blockCount,vcb->blockSize);
+        dirRead(dir,dir->dirEntries[1].location);
     }
 
 

@@ -16,3 +16,4 @@
 
 int fileWrite(char * fileBuffer, uint64_t fileSize, uint64_t fileLoc);
 int fileRead(char * fileBuffer, uint64_t fileSize, uint64_t fileLoc);
+char * fileInstance(uint64_t fileSize);
