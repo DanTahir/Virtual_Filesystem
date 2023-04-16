@@ -226,6 +226,27 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 		}
 	}
 	/**/	
+	setcwdReturn = fs_setcwd("test2");
+	printf("changing to test2 returns %d\n", setcwdReturn);
+	printf("Making directory test3\n");	
+	mkdirReturn = fs_mkdir("test3", aMode);
+	printf("create test3 returns %d\n", mkdirReturn);
+	printf("Making directory /test1/test2/test3/test4\n");	
+	mkdirReturn = fs_mkdir("/test1/test2/test3/test4", aMode);
+	printf("create /test1/test2/test3/test4 returns %d\n", mkdirReturn);
+	setcwdReturn = fs_setcwd("test3");
+	printf("changing to test3 returns %d\n", setcwdReturn);
+	for(int i = 0; i < MAXDIRENTRIES; i++){
+		if(workingDir->dirEntries[i].name[0] != '\0'){
+			printf("Entry in working directory - %s\n", workingDir->dirEntries[i].name);
+			printf("size: %lu, location: %lu\n", workingDir->dirEntries[i].size, workingDir->dirEntries[i].location);
+		}
+	}
+	char myPath[50];
+	fs_getcwd(myPath, 50);
+	printf("fs_getcwd returns %s\n", myPath);
+
+
 	free(vcb);
 	vcb=NULL;
 	return 0;

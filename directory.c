@@ -47,8 +47,6 @@ uint64_t dirInitNew(uint64_t parentDirLoc){
     // then we read from the bitmap to get the location of the new file and set its blocks
     // in the bitmap and write the bitmap;
     uint64_t freeSpace = bitmapFirstFreeFilespace(sizeof(Dir));
-    printf("sizeof(Dir) = %lu", sizeof(Dir));
-    printf("space returned by firstfreefilespace - %lu\n", freeSpace);
     if(freeSpace == 0){
         printf("volume full\n");
         free(dir);

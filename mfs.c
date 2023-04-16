@@ -418,45 +418,63 @@ int fs_rmdir(const char *pathname)
 // or the present working directory
 char * fs_getcwd(char *pathname, size_t size)
 {
-    printf("Pathname = %s and size = %lu\n", pathname, size);
-    // pathname is going to be empty here because it hasn't been
-    // filled with anything yet
-    //Dir * dir = malloc(sizeof(Dir));
-    //dirCopyWorking(dir);
-
-    //use vcb to get location of root dir
-    VCB * vcb = getVCBG();
-    uint64_t rootDirLocation =vcb->rootDirStart;
-
-    //get current working dir
+    int maxDepth = 30;
     Dir * dir = dirInstance();
+    char tokens[maxDepth][NAMELEN];
     dirCopyWorking(dir);
+    pathname[0] = '\0';
 
-    //tracks the path written to our pathname
-    int pathWritten = 0;
+    for(int i = 0; i < maxDepth; i++){
+        tokens[i][0] = '\0';
+    }
 
-    //loop through all parent entries and add slash each time
-    while(dir->dirEntries[0].location!=rootDirLocation){
-        pathname[pathWritten]='\\';
-        pathWritten++;
-        strcpy(pathname+pathWritten,dir->dirEntries[0].name);
-        pathWritten+=strlen(dir->dirEntries[0].name);
+    int tokenCount = 0;
+    while(1){
+        if (dir->dirEntries[0].location == dir->dirEntries[1].location){
+            break;
+        }
+        // printf(". location - %lu\n", dir->dirEntries[0].location);
+        // printf(".. location - %lu\n", dir->dirEntries[1].location);
+        uint64_t lastLocation = dir->dirEntries[0].location;
         dirRead(dir,dir->dirEntries[1].location);
+        
+        // printf("new . location - %lu\n", dir->dirEntries[0].location);
+        // printf("new .. location - %lu\n", dir->dirEntries[1].location);
+        int i;
+        for(i = 0; i < MAXDIRENTRIES; i++){
+            if(dir->dirEntries[i].location == lastLocation){
+                break;
+            }
+        }
+        if (i == MAXDIRENTRIES){
+            printf("critical error, directory not found in parent\n");
+            free(dir);
+            dir = NULL;
+
+            return NULL;
+        }
+        strcpy(tokens[tokenCount], dir->dirEntries[i].name);
+        tokenCount++;
+        if (tokenCount == maxDepth){
+            break;
+        }
+
+    }
+
+    tokenCount--;
+    int mySize = (int)size;
+    for(tokenCount; tokenCount > -1; tokenCount--){
+        mySize = mySize - strlen(tokens[tokenCount]);
+        if (mySize < 0){
+            break;
+        }
+        sprintf(pathname, "%s/%s", pathname, tokens[tokenCount]);
+
     }
 
 
-    //add terminating character to pathname
-    pathname[pathWritten]='\0';
     free(dir);
+    dir = NULL;
 
     return pathname;
-
-    
-
-
-
-    //return workingDir->dirEntries->location;
-    // Mahek - this is wrong, you want to return pathname after you
-    // fill it in with the working directory's path
-    // - Dan
 }
