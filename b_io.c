@@ -252,9 +252,11 @@ int b_write (b_io_fd fd, char * buffer, int count)
 			fcbArray[fd].dir->dirEntries[0].location);
 
 		dirResetWorking();
+		fcbArray[fd].index = fcbArray[fd].index + count;
+
 		int bytesWritten = (fcbArray[fd].buflen < fcbArray[fd].index) ?
 			fcbArray[fd].index + count - fcbArray[fd].buflen : count;
-
+		
 		free(vcb);
 		return bytesWritten;
 	}
@@ -309,7 +311,6 @@ int b_read (b_io_fd fd, char * buffer, int count)
 	if (myCount < 0){
 		myCount = 0;
 	}
-
 	memcpy(buffer, fcbArray[fd].buf + fcbArray[fd].index, myCount);
 	fcbArray[fd].index = fcbArray[fd].index + myCount;
 

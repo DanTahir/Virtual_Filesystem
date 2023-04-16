@@ -119,7 +119,7 @@ Traverse the file system to the exact location of the file and load the appropri
 if the entries in the proper directory have a matching name to the targeted file name free the struct
 */
 int traverseReturn = dirTraversePath(dir, path, fileName);
-if (traverseReturn = -1){
+if (traverseReturn == -1){
     printf("path invalid\n");
     return -1;
 }
