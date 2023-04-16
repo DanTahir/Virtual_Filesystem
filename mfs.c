@@ -163,7 +163,7 @@ targeted file name free the struct
 char fileName[NAMELEN];
 DirEntry* entry;
 int traverseReturn = dirTraversePath(dir, path, fileName);
-if (traverseReturn = -1){
+if (traverseReturn == -1){
     printf("path invalid\n");
     free(dir);
     return -1;
@@ -288,7 +288,6 @@ struct fs_diriteminfo *fs_readdir(fdDir *dirp){
 
     
     if(i == MAXDIRENTRIES){
-        printf("entry not found\n");
         free(vcb);
         vcb = NULL;
         free(dir);

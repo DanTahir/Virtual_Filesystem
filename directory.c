@@ -159,6 +159,8 @@ void dirFreeWorking(){
 // on the last node, for example mkdir uses it to create a directory, while rmdir
 // uses it to remove a directory
 int dirTraversePath(Dir * dir, const char * pathName, char * endName){
+    
+
     VCB * vcb = getVCBG();
     char * pathNonConst = strdup(pathName);
     endName[0] = '\0';
