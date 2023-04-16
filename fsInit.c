@@ -195,12 +195,40 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 	bReadReturn2 = b_read(bOpenReturn2, aString2, 32);
 	printf("b_read returns %d\n", bReadReturn2);
 	printf("b_read prints: %s\n", aString2);
+	printf("deleting test3\n");
+	fs_rmdir("test3");
+	for(int i = 0; i < MAXDIRENTRIES; i++){
+		if(workingDir->dirEntries[i].name[0] != '\0'){
+			printf("Entry in working directory - %s\n", workingDir->dirEntries[i].name);
+			printf("size: %lu, location: %lu\n", workingDir->dirEntries[i].size, workingDir->dirEntries[i].location);
+		}
+	}	
 
+	setcwdReturn = fs_setcwd("..");
+	printf("changing to test1 (..) returns %d\n", setcwdReturn);
+	setcwdReturn = fs_setcwd("test2");
+	printf("changing to test2 returns %d\n", setcwdReturn);
+	for(int i = 0; i < MAXDIRENTRIES; i++){
+		if(workingDir->dirEntries[i].name[0] != '\0'){
+			printf("Entry in working directory - %s\n", workingDir->dirEntries[i].name);
+			printf("size: %lu, location: %lu\n", workingDir->dirEntries[i].size, workingDir->dirEntries[i].location);
+		}
+	}
+	
+	setcwdReturn = fs_setcwd("..");
+	printf("changing to test1 (..) returns %d\n", setcwdReturn);
+	printf("deleting test2\n");
+	fs_rmdir("test2");
+	for(int i = 0; i < MAXDIRENTRIES; i++){
+		if(workingDir->dirEntries[i].name[0] != '\0'){
+			printf("Entry in working directory - %s\n", workingDir->dirEntries[i].name);
+			printf("size: %lu, location: %lu\n", workingDir->dirEntries[i].size, workingDir->dirEntries[i].location);
+		}
+	}
+	/**/	
 	free(vcb);
 	vcb=NULL;
 	return 0;
-
-
 
 
 

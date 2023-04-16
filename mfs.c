@@ -349,13 +349,13 @@ int fs_rmdir(const char *pathname)
     Dir * dir = dirInstance();
     dirCopyWorking(dir);
 
-    char dirToDelete[NAMELEN];
+    char dirNameToDel[NAMELEN];
 
     //DirEntry* entry = &dir->dirEntries[i];
 
     // Check for Valid Path
-    int traverseReturn = dirTraversePath(dir, pathname, dirToDelete);
-    printf("Dir to Delete - %s\n", dirToDelete);
+    int traverseReturn = dirTraversePath(dir, pathname, dirNameToDel);
+    printf("Dir to Delete - %s\n", dirNameToDel);
     if(traverseReturn != 0){
         printf("Traverse path failed\n");
         free(dir);
@@ -363,54 +363,54 @@ int fs_rmdir(const char *pathname)
         return PATH_NOT_FOUND;
     }
 
-    //DirEntry* entry;
-    /*for (int i = 0; i < MAXDIRENTRIES; i++) {
-        entry = &dir->dirEntries[i];
-        if (strcmp(entry->name, fileName) == 0) {
+    int i;
+    for(i = 2; i < MAXDIRENTRIES; i++){
+        int strcmpVal = strcmp(dirNameToDel, dir->dirEntries[i].name);
+        if(strcmpVal == 0){
             break;
         }
-    }*/
-    
-    // Comparing the First Two Directory Entries
-    // First Dir Entry should be . (Current Directory)
-    // Second should be .. (Parent Directory)
-    if(strcmp(dir->dirEntries[0].name, ".") && strcmp(dir->dirEntries[1].name, ".."))
-    {
-        DirEmpty = true;
+    }
+    if (i == MAXDIRENTRIES){
+        printf("dir to delete not found\n");
+        free(dir);
+        dir=NULL;
+        return -1;
+    }
+    if(dir->dirEntries[i].isDir == 0){
+        printf("this is a file, not a directory\n");
+        free(dir);
+        dir=NULL;
+        return -1;
     }
 
-    // Checking for the Rest of Entries. 
-    // To delete a directory, we should not have any other directories
-    for(int i=2; i < MAXDIRENTRIES; i++)
-    {
-        if (strcmp(dir->dirEntries[i].name, "") != 0) {
-            DirEmpty = false;
+    Dir * dirToDel = dirInstance();
+    dirRead(dirToDel, dir->dirEntries[i].location);
+    int j;
+    for(j = 2; j < MAXDIRENTRIES; j++){
+        if (dirToDel->dirEntries[j].name[0] != '\0'){
             break;
         }
-        else
-        {
-            DirEmpty = true;
-        }
-
     }
-
-    if(DirEmpty == false)
-    {
-        printf("Cannot Remove Directory, Directory Not Empty\n");
-        return DIR_NOT_EMPTY;
+    if (j != MAXDIRENTRIES){
+        printf("directory not empty\n");
+        free(dir);
+        dir=NULL;
+        free(dirToDel);
+        dirToDel = NULL;
+        return -1;
     }
-    else
-    {
-        // Initializing all the other directory entries to NULL 
-        for(int i=2; i < MAXDIRENTRIES; i++)
-        {
-            dir->dirEntries[i].name[0] = '\0';
-            dir->dirEntries[i].size = 0;
-            dir->dirEntries[i].used = false;
-        }
-        
+    for(int k = 0; k < NAMELEN; k++){
+        dir->dirEntries[i].name[k] = '\0';
     }
-    
+    bitmapFreeFileSpace(dir->dirEntries[i].size, dir->dirEntries[i].location);
+    dir->dirEntries[i].location = 0;
+    dir->dirEntries[i].size = 0;
+    dirWrite(dir, dir->dirEntries[0].location);
+    dirResetWorking();
+    free(dir);
+    dir=NULL;
+    free(dirToDel);
+    dirToDel = NULL;
     return 0;
 }
 
