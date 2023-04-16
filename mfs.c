@@ -460,8 +460,9 @@ char * fs_getcwd(char *pathname, size_t size)
         }
 
     }
-
+    
     tokenCount--;
+
     int mySize = (int)size;
     for(tokenCount; tokenCount > -1; tokenCount--){
         mySize = mySize - strlen(tokens[tokenCount]);
