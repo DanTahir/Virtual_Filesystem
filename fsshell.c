@@ -107,6 +107,11 @@ int displayFiles (fdDir * dirp, int flall, int fllong)
 			{
 			if (fllong)
 				{
+				// there's no way to make this work for paths without creating a dir
+				// here and switching the working directory back and forth because fs_stat
+				// reads a path from the working directory not the directory passed in to
+				// fs_readdir, so we have to set the working directory to the directory
+				// pointed to by fs_readdir, then set it back once we're done reading
 				Dir * dir = dirInstance();
 				dirCopyWorking(dir);
 				dirSetWorking(dirp->directoryStartLocation);

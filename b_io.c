@@ -83,6 +83,8 @@ b_io_fd b_open (char * filename, int flags)
 		return(-1);
 	}
 
+	// first we set up the directory and follow the path to the directory and filename
+
 	Dir * dir = dirInstance();
 	dirCopyWorking(dir);
 	char realFileName[NAMELEN];
@@ -92,6 +94,7 @@ b_io_fd b_open (char * filename, int flags)
 		return -1;
 	}
 
+	// We loop through the directory and try to find the filename
 
 	int i;
 	for (i = 2; i < MAXDIRENTRIES; i++){
@@ -100,6 +103,11 @@ b_io_fd b_open (char * filename, int flags)
 			break;
 		}
 	}
+
+	// if the filename isn't found, we check if the create flag is set. If it isn't,
+	// we say "file not found" and quit. If it is, we make sure the directory isn't
+	// full, then we create a file of size zero with a buffer the size of one block
+	// (there has to be a buffer so b_getFCB recognizes it as taken);
 	if (i == MAXDIRENTRIES){
 		if(flags & O_CREAT){
 			for (i = 2; i < MAXDIRENTRIES; i++){
@@ -144,26 +152,40 @@ b_io_fd b_open (char * filename, int flags)
 		dir=NULL;
 		return -1;
 	}
+	// If the truncate flag is set, free the filespace in the bitmap, set the size
+	// to zero in the directory, set the location to zero (because it no longer has a size so it
+	// doesn't take up any location) then write the directory. This effectively zeroes
+	// out the file.
 	if (flags & O_TRUNC){
-		VCB * vcb = getVCBG();
+		bitmapFreeFileSpace(dir->dirEntries[i].size, dir->dirEntries[i].location);
 		dir->dirEntries[i].size = 0;
+		dir->dirEntries[i].location = 0;
 		dirWrite(dir, 
 			dir->dirEntries[0].location);
 		dirResetWorking();
-		free(vcb);
-		vcb=NULL;
+
 
 	}
+	// At this point we've found a file and are ready to do something with it.
+	// if its size is zero we set its buffer size to one block. If it has a size
+	// we set its buffer to the size of the file rounded up to the nearest block.
+	// this allows us to do LBA reads and writes without allocating a temp buffer.
+	
 	if(dir->dirEntries[i].size == 0){
 		fcbArray[returnFd].buf = fileInstance(1);
 	}
 	else{
 		fcbArray[returnFd].buf = fileInstance(dir->dirEntries[i].size);
 	}
-
+	// Now we read the whole file into the buffer. This allows us to do b_read
+	// without calling LBARead at all, and only call LBAWrite once per b_write. At
+	// a cost of theoretically no greater than 10MB of memory (the maximum filesize on
+	// the volume). While also massively simplifying our code. It's win win win!
 	fileRead(fcbArray[returnFd].buf, 
 		dir->dirEntries[i].size, 
 		dir->dirEntries[i].location);
+	// Now we store various data including the directory pointer and position (so we can
+	// update the directory in b_write).
 	fcbArray[returnFd].buflen = dir->dirEntries[i].size;
 	fcbArray[returnFd].index = 0;
 	fcbArray[returnFd].dir = dir;
@@ -185,6 +207,8 @@ int b_seek (b_io_fd fd, off_t offset, int whence)
 		{
 		return (-1); 					//invalid file descriptor
 		}
+	// b_seek is pretty simple, we just set the index position based on
+	// the flags, then add the offset;
 	if (whence == SEEK_SET){
 		fcbArray[fd].index = 0;
 	}
@@ -197,7 +221,7 @@ int b_seek (b_io_fd fd, off_t offset, int whence)
 
 	fcbArray[fd].index = fcbArray[fd].index + offset;
 		
-	return fcbArray[fd].index; //Change this
+	return fcbArray[fd].index; 
 	}
 
 
@@ -221,8 +245,24 @@ int b_write (b_io_fd fd, char * buffer, int count)
 	}
 
 	VCB * vcb = getVCBG();
+	// update the directory in case it's been changed since the file was opened or last written
 	dirRead(fcbArray[fd].dir, 
 		fcbArray[fd].dir->dirEntries[0].location);
+
+	// If the write operation overruns the existing length of the file, we need to do a lot
+	// of stuff to properly write the new, longer file. First we free its existing filespace
+	// and search for a new filespace (in case the file has grown and requires a larger
+	// filespace). If we can't find a new filespace the volume is too full for the operation
+	// so we reallocate the original filespace and exit the function with -1. 
+	// Next we reallocate the buffer to be the new size of the file and re-read the existing
+	// file back into the newly enlarged buffer.
+	// Next we overwrite the buffer with the user buffer to carry out the write operation, 
+	// writing from index to count
+	// Next we allocate the filespace in the bitmap
+	// Next we write the edited file from the file buffer to disk
+	// Next we update the directory values and write the directory to disk
+	// Finally we return the number of bytes written (which may be more than count if the 
+	// index is set to beyond the filesize)
 	if(fcbArray[fd].buflen < fcbArray[fd].index + count){
 		//TODO: do a lot of complicated stuff here
 
@@ -260,6 +300,11 @@ int b_write (b_io_fd fd, char * buffer, int count)
 		free(vcb);
 		return bytesWritten;
 	}
+
+	// if the write operation doesn't go over the existing filesize, we very simply
+	// memcpy the user buffer into the file buffer, then write the file buffer
+	// and increment the index.
+
 	memcpy(fcbArray[fd].buf + fcbArray[fd].index, buffer, count);
 	fileWrite(fcbArray[fd].buf, 
 		fcbArray[fd].buflen, 
@@ -311,6 +356,7 @@ int b_read (b_io_fd fd, char * buffer, int count)
 	if (myCount < 0){
 		myCount = 0;
 	}
+	// We don't have to lbaread here at all, we just read from the file buffer!
 	memcpy(buffer, fcbArray[fd].buf + fcbArray[fd].index, myCount);
 	fcbArray[fd].index = fcbArray[fd].index + myCount;
 
@@ -320,9 +366,11 @@ int b_read (b_io_fd fd, char * buffer, int count)
 // Interface to Close the file	
 int b_close (b_io_fd fd)
 	{
+		// make sure the fd is valid
 		if (fd < 0 || fd >= MAXFCBS){
 			return -1;
 		}
+		// free and zero everything
 		free(fcbArray[fd].buf);
 		fcbArray[fd].buf = NULL;
 		free(fcbArray[fd].dir);
