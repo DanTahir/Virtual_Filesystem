@@ -112,12 +112,12 @@ int displayFiles (fdDir * dirp, int flall, int fllong)
 				// reads a path from the working directory not the directory passed in to
 				// fs_readdir, so we have to set the working directory to the directory
 				// pointed to by fs_readdir, then set it back once we're done reading
-				Dir * dir = dirInstance();
+				DirEntry * dir = dirInstance();
 				dirCopyWorking(dir);
 				dirSetWorking(dirp->directoryStartLocation);
 				fs_stat (di->d_name, &statbuf);
 				printf ("%s    %9ld   %s\n", fs_isDir(di->d_name)?"D":"-", statbuf.st_size, di->d_name);
-				dirSetWorking(dir->dirEntries[0].location);
+				dirSetWorking(dir[0].location);
 				free(dir);
 				dir=NULL;
 				}

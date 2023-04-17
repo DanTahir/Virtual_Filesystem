@@ -30,7 +30,7 @@ typedef struct b_fcb
 	char * buf;		//holds the open file buffer
 	uint64_t index;		//holds the current position in the buffer
 	uint64_t buflen;		//holds how many valid bytes are in the buffer
-	Dir * dir;
+	DirEntry * dir;
 	int dirPos;
 	int flags;
 	} b_fcb;
@@ -85,7 +85,7 @@ b_io_fd b_open (char * filename, int flags)
 
 	// first we set up the directory and follow the path to the directory and filename
 
-	Dir * dir = dirInstance();
+	DirEntry * dir = dirInstance();
 	dirCopyWorking(dir);
 	char realFileName[NAMELEN];
 	int traverseReturn = dirTraversePath(dir, filename, realFileName);
@@ -98,7 +98,7 @@ b_io_fd b_open (char * filename, int flags)
 
 	int i;
 	for (i = 2; i < MAXDIRENTRIES; i++){
-		int strcmpVal = strncmp(dir->dirEntries[i].name, realFileName, NAMELEN - 1);
+		int strcmpVal = strncmp(dir[i].name, realFileName, NAMELEN - 1);
 		if(strcmpVal == 0){
 			break;
 		}
@@ -111,7 +111,7 @@ b_io_fd b_open (char * filename, int flags)
 	if (i == MAXDIRENTRIES){
 		if(flags & O_CREAT){
 			for (i = 2; i < MAXDIRENTRIES; i++){
-				if(dir->dirEntries[i].name[0] == '\0'){
+				if(dir[i].name[0] == '\0'){
 					break;
 				}
 			}
@@ -121,12 +121,12 @@ b_io_fd b_open (char * filename, int flags)
 				dir=NULL;
 				return -1;
 			}
-			strncpy(dir->dirEntries[i].name, realFileName, NAMELEN - 1);
-			dir->dirEntries[i].location = 0;
-			dir->dirEntries[i].size = 0;
-			dir->dirEntries[i].isDir = 0;
+			strncpy(dir[i].name, realFileName, NAMELEN - 1);
+			dir[i].location = 0;
+			dir[i].size = 0;
+			dir[i].isDir = 0;
 			VCB * vcb = getVCBG();
-			dirWrite(dir, dir->dirEntries[0].location);
+			dirWrite(dir, dir[0].location);
 			dirResetWorking();
 			free(vcb);
 			vcb=NULL;
@@ -146,7 +146,7 @@ b_io_fd b_open (char * filename, int flags)
 			return -1;
 		}
 	}
-	if(dir->dirEntries[i].isDir == 1){
+	if(dir[i].isDir == 1){
 		printf("directory selected\n");
 		free(dir);
 		dir=NULL;
@@ -157,11 +157,11 @@ b_io_fd b_open (char * filename, int flags)
 	// doesn't take up any location) then write the directory. This effectively zeroes
 	// out the file.
 	if (flags & O_TRUNC){
-		bitmapFreeFileSpace(dir->dirEntries[i].size, dir->dirEntries[i].location);
-		dir->dirEntries[i].size = 0;
-		dir->dirEntries[i].location = 0;
+		bitmapFreeFileSpace(dir[i].size, dir[i].location);
+		dir[i].size = 0;
+		dir[i].location = 0;
 		dirWrite(dir, 
-			dir->dirEntries[0].location);
+			dir[0].location);
 		dirResetWorking();
 
 
@@ -171,22 +171,22 @@ b_io_fd b_open (char * filename, int flags)
 	// we set its buffer to the size of the file rounded up to the nearest block.
 	// this allows us to do LBA reads and writes without allocating a temp buffer.
 	
-	if(dir->dirEntries[i].size == 0){
+	if(dir[i].size == 0){
 		fcbArray[returnFd].buf = fileInstance(1);
 	}
 	else{
-		fcbArray[returnFd].buf = fileInstance(dir->dirEntries[i].size);
+		fcbArray[returnFd].buf = fileInstance(dir[i].size);
 	}
 	// Now we read the whole file into the buffer. This allows us to do b_read
 	// without calling LBARead at all, and only call LBAWrite once per b_write. At
 	// a cost of theoretically no greater than 10MB of memory (the maximum filesize on
 	// the volume). While also massively simplifying our code. It's win win win!
 	fileRead(fcbArray[returnFd].buf, 
-		dir->dirEntries[i].size, 
-		dir->dirEntries[i].location);
+		dir[i].size, 
+		dir[i].location);
 	// Now we store various data including the directory pointer and position (so we can
 	// update the directory in b_write).
-	fcbArray[returnFd].buflen = dir->dirEntries[i].size;
+	fcbArray[returnFd].buflen = dir[i].size;
 	fcbArray[returnFd].index = 0;
 	fcbArray[returnFd].dir = dir;
 	fcbArray[returnFd].dirPos = i;
@@ -247,7 +247,7 @@ int b_write (b_io_fd fd, char * buffer, int count)
 	VCB * vcb = getVCBG();
 	// update the directory in case it's been changed since the file was opened or last written
 	dirRead(fcbArray[fd].dir, 
-		fcbArray[fd].dir->dirEntries[0].location);
+		fcbArray[fd].dir[0].location);
 
 	// If the write operation overruns the existing length of the file, we need to do a lot
 	// of stuff to properly write the new, longer file. First we free its existing filespace
@@ -266,7 +266,7 @@ int b_write (b_io_fd fd, char * buffer, int count)
 	if(fcbArray[fd].buflen < fcbArray[fd].index + count){
 		//TODO: do a lot of complicated stuff here
 
-		uint64_t oldLocation = fcbArray[fd].dir->dirEntries[fcbArray[fd].dirPos].location;
+		uint64_t oldLocation = fcbArray[fd].dir[fcbArray[fd].dirPos].location;
 		bitmapFreeFileSpace(fcbArray[fd].buflen, oldLocation);
 		uint64_t location = bitmapFirstFreeFilespace(fcbArray[fd].index + count);
 		if(location == 0){
@@ -285,11 +285,11 @@ int b_write (b_io_fd fd, char * buffer, int count)
 		fcbArray[fd].buflen = fcbArray[fd].index + count;
 		bitmapAllocFileSpace(fcbArray[fd].buflen, location);
 		fileWrite(fcbArray[fd].buf, fcbArray[fd].buflen, location);
-		fcbArray[fd].dir->dirEntries[fcbArray[fd].dirPos].location = location;
-		fcbArray[fd].dir->dirEntries[fcbArray[fd].dirPos].size = fcbArray[fd].buflen;
+		fcbArray[fd].dir[fcbArray[fd].dirPos].location = location;
+		fcbArray[fd].dir[fcbArray[fd].dirPos].size = fcbArray[fd].buflen;
 		
 		dirWrite(fcbArray[fd].dir, 
-			fcbArray[fd].dir->dirEntries[0].location);
+			fcbArray[fd].dir[0].location);
 
 		dirResetWorking();
 		fcbArray[fd].index = fcbArray[fd].index + count;
@@ -308,7 +308,7 @@ int b_write (b_io_fd fd, char * buffer, int count)
 	memcpy(fcbArray[fd].buf + fcbArray[fd].index, buffer, count);
 	fileWrite(fcbArray[fd].buf, 
 		fcbArray[fd].buflen, 
-		fcbArray[fd].dir->dirEntries[fcbArray[fd].dirPos].location);
+		fcbArray[fd].dir[fcbArray[fd].dirPos].location);
 	fcbArray[fd].index = fcbArray[fd].index + count;
 
 	free(vcb);

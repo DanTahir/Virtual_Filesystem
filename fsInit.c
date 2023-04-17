@@ -39,7 +39,6 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 		bitmapInit();
 		printf("getting VCB\n");
 		VCB * vcb = getVCBG();
-		Dir * dir = malloc(sizeof(Dir));
 		printf("writing root directory\n");
 		dirInitNew(vcb->rootDirStart);
 

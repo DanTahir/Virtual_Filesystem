@@ -33,22 +33,16 @@ typedef struct DirEntry {
 
 } DirEntry;
 
-typedef struct Dir {
-
-    DirEntry dirEntries[MAXDIRENTRIES];
-
-} Dir;
-
-extern Dir * workingDir;
+extern DirEntry * workingDir;
 
 // mallocs a Dir
-Dir * dirInstance();
+DirEntry * dirInstance();
 // creates a new directory
 uint64_t dirInitNew(uint64_t parentDirLoc);
 // writes a directory to volume
-void dirWrite(Dir * dir, uint64_t location);
+void dirWrite(DirEntry * dir, uint64_t location);
 // reads a directory from volume
-void dirRead(Dir * dir, uint64_t location);
+void dirRead(DirEntry * dir, uint64_t location);
 // set the working directory to a given volume location
 void dirSetWorking(uint64_t location);
 // reread the working directory from the volume
@@ -59,8 +53,8 @@ void dirInitWorking(uint64_t location);
 void dirFreeWorking();
 // advance a directory to a given position on the directory tree, returning the last node in the
 // path as a string (which must be allocated memory)
-int dirTraversePath(Dir * dir, const char * pathName, char * endName);
+int dirTraversePath(DirEntry * dir, const char * pathName, char * endName);
 // this copies the working directory to the passed-in directory so
 // the passed-in directory can be traversed without changing the
 // working directory
-void dirCopyWorking(Dir * dir);
+void dirCopyWorking(DirEntry * dir);

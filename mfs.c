@@ -18,7 +18,7 @@
 int fs_mkdir(const char *pathname, mode_t mode){
     
     
-    Dir * dir = dirInstance();
+    DirEntry * dir = dirInstance();
     dirCopyWorking(dir);
     char dirToMake[NAMELEN];
     int traverseReturn = dirTraversePath(dir, pathname, dirToMake);
@@ -31,7 +31,7 @@ int fs_mkdir(const char *pathname, mode_t mode){
     }
     int i;
     for(i = 0; i < MAXDIRENTRIES; i++){
-        int strcmpVal = strncmp(dir->dirEntries[i].name, dirToMake, NAMELEN - 1);
+        int strcmpVal = strncmp(dir[i].name, dirToMake, NAMELEN - 1);
         if (strcmpVal == 0){
             printf("dirToMake found in dir\n");
             free(dir);
@@ -40,7 +40,7 @@ int fs_mkdir(const char *pathname, mode_t mode){
         }
     }
     for(i = 0; i < MAXDIRENTRIES; i++){
-        if (dir->dirEntries[i].name[0] == '\0'){
+        if (dir[i].name[0] == '\0'){
             break;
         }
     }
@@ -53,17 +53,17 @@ int fs_mkdir(const char *pathname, mode_t mode){
 
     VCB * vcb = getVCBG();
 
-    strncpy(dir->dirEntries[i].name, dirToMake, NAMELEN - 1);
-    dir->dirEntries[i].isDir = 1;
-    dir->dirEntries[i].size = sizeof(Dir);
-    dir->dirEntries[i].location = dirInitNew(dir->dirEntries[0].location);
+    strncpy(dir[i].name, dirToMake, NAMELEN - 1);
+    dir[i].isDir = 1;
+    dir[i].size = sizeof(DirEntry) * MAXDIRENTRIES;
+    dir[i].location = dirInitNew(dir[0].location);
 
-    if (dir->dirEntries[i].location == 0){
+    if (dir[i].location == 0){
         printf("volume full\n");
         return -1;
     }
 
-    dirWrite(dir, dir->dirEntries[0].location);
+    dirWrite(dir, dir[0].location);
     dirResetWorking(vcb->blockCount, vcb->blockSize);
 
 
@@ -86,7 +86,7 @@ int fs_setcwd(char *pathname){
     }
     int i;
     for(i = 0; i < MAXDIRENTRIES; i++){
-        int strcmpVal = strcmp(workingDir->dirEntries[i].name, finalDirName);
+        int strcmpVal = strcmp(workingDir[i].name, finalDirName);
         if(strcmpVal == 0){
             break;
         }
@@ -94,11 +94,11 @@ int fs_setcwd(char *pathname){
     if (i == MAXDIRENTRIES){
         return -1;
     }
-    if (workingDir->dirEntries[i].isDir != 1){
+    if (workingDir[i].isDir != 1){
         return -1;
     }
 
-    dirSetWorking(workingDir->dirEntries[i].location);
+    dirSetWorking(workingDir[i].location);
 
     return 0;
 
@@ -109,7 +109,7 @@ int fs_delete(char* path){
 load a directory current dir
 */
 
-Dir * dir = dirInstance();
+DirEntry * dir = dirInstance();
 dirCopyWorking(dir);
 
 char fileName[NAMELEN];
@@ -124,7 +124,7 @@ if (traverseReturn == -1){
     return -1;
 }
 for (int i = 0; i < MAXDIRENTRIES; i++) {
-    DirEntry* entry = &dir->dirEntries[i];
+    DirEntry* entry = &dir[i];
 
     if (strcmp(entry->name, fileName) == 0) {
         if(entry->isDir == 1){
@@ -137,7 +137,7 @@ for (int i = 0; i < MAXDIRENTRIES; i++) {
         entry->location = 0;
         entry->size = 0;
         VCB * vcb = getVCBG();
-        dirWrite(dir, dir->dirEntries[0].location);
+        dirWrite(dir, dir[0].location);
         dirResetWorking(vcb->blockCount, vcb->blockSize);
         free(vcb);
         free(dir);
@@ -153,7 +153,7 @@ int fs_stat(const char *path, struct fs_stat *buf){
 /*
 load a directory based on the working directory 
 */
-Dir * dir = dirInstance();
+DirEntry * dir = dirInstance();
 dirCopyWorking(dir);
 /*
 Traverse the file system based on the path provided to the exact location of the file and load 
@@ -170,7 +170,7 @@ if (traverseReturn == -1){
 }
 int i;
 for (i = 0; i < MAXDIRENTRIES; i++) {
-     entry = &dir->dirEntries[i];
+     entry = &dir[i];
     if (strcmp(entry->name, fileName) == 0) {
         break;
     }
@@ -204,7 +204,7 @@ free(vcb);
 fdDir * fs_opendir(const char *pathname){
     VCB* vcb = getVCBG();
     char dirToOpen[NAMELEN];
-    Dir* dir = dirInstance();
+    DirEntry * dir = dirInstance();
 
     dirCopyWorking(dir);
 
@@ -223,7 +223,7 @@ fdDir * fs_opendir(const char *pathname){
         fdDir* myDir = malloc(sizeof(fdDir));
         myDir->d_reclen = sizeof(fdDir) ;
         myDir->dirEntryPosition = 1 ;
-        myDir->directoryStartLocation =dir->dirEntries[0].location;
+        myDir->directoryStartLocation =dir[0].location;
 
         free(dir);
         free(vcb);
@@ -233,12 +233,12 @@ fdDir * fs_opendir(const char *pathname){
 
     for(int i=0;i<MAXDIRENTRIES;i++){
         //Check if name matches and is it a directory
-        if(strncmp(dir->dirEntries[i].name, dirToOpen, NAMELEN-1) == 0 && dir->dirEntries[i].isDir){
+        if(strncmp(dir[i].name, dirToOpen, NAMELEN-1) == 0 && dir[i].isDir){
             //Dir found, Load it into memory
             fdDir* myDir = malloc(sizeof(fdDir));
             myDir->d_reclen = sizeof(fdDir) ;
             myDir->dirEntryPosition = 1;
-            myDir->directoryStartLocation =dir->dirEntries[i].location;
+            myDir->directoryStartLocation =dir[i].location;
             free(dir);
             free(vcb);
             return myDir;
@@ -266,7 +266,7 @@ struct fs_diriteminfo *fs_readdir(fdDir *dirp){
     
 
      VCB* vcb = getVCBG();
-     Dir* dir = dirInstance();
+     DirEntry * dir = dirInstance();
 
     //dir read on the directory
     //to the location pointed by dirp-> startlocation
@@ -279,7 +279,7 @@ struct fs_diriteminfo *fs_readdir(fdDir *dirp){
     int dep = dirp->dirEntryPosition;
     int i;
     for(i=0;i<MAXDIRENTRIES;i++){
-        if(dir->dirEntries[i].name[0]!='\0'){
+        if(dir[i].name[0]!='\0'){
             dep--;
         }
         if(dep==0) break;
@@ -296,9 +296,9 @@ struct fs_diriteminfo *fs_readdir(fdDir *dirp){
 
     //Read directory here
     struct fs_diriteminfo* directory = malloc(sizeof(struct fs_diriteminfo));
-    strcpy(directory->d_name,dir->dirEntries[i].name);
+    strcpy(directory->d_name,dir[i].name);
     directory->d_reclen = sizeof(struct fs_diriteminfo);
-    if(dir->dirEntries[i].isDir){
+    if(dir[i].isDir){
         directory->fileType='d';
     }
     else{
@@ -346,12 +346,12 @@ int fs_rmdir(const char *pathname)
     struct fs_stat fileStat;
     bool DirEmpty;
 
-    Dir * dir = dirInstance();
+    DirEntry * dir = dirInstance();
     dirCopyWorking(dir);
 
     char dirNameToDel[NAMELEN];
 
-    //DirEntry* entry = &dir->dirEntries[i];
+    //DirEntry* entry = &dir[i];
 
     // Check for Valid Path
     int traverseReturn = dirTraversePath(dir, pathname, dirNameToDel);
@@ -365,7 +365,7 @@ int fs_rmdir(const char *pathname)
 
     int i;
     for(i = 2; i < MAXDIRENTRIES; i++){
-        int strcmpVal = strcmp(dirNameToDel, dir->dirEntries[i].name);
+        int strcmpVal = strcmp(dirNameToDel, dir[i].name);
         if(strcmpVal == 0){
             break;
         }
@@ -376,18 +376,18 @@ int fs_rmdir(const char *pathname)
         dir=NULL;
         return -1;
     }
-    if(dir->dirEntries[i].isDir == 0){
+    if(dir[i].isDir == 0){
         printf("this is a file, not a directory\n");
         free(dir);
         dir=NULL;
         return -1;
     }
 
-    Dir * dirToDel = dirInstance();
-    dirRead(dirToDel, dir->dirEntries[i].location);
+    DirEntry * dirToDel = dirInstance();
+    dirRead(dirToDel, dir[i].location);
     int j;
     for(j = 2; j < MAXDIRENTRIES; j++){
-        if (dirToDel->dirEntries[j].name[0] != '\0'){
+        if (dirToDel[j].name[0] != '\0'){
             break;
         }
     }
@@ -400,12 +400,12 @@ int fs_rmdir(const char *pathname)
         return -1;
     }
     for(int k = 0; k < NAMELEN; k++){
-        dir->dirEntries[i].name[k] = '\0';
+        dir[i].name[k] = '\0';
     }
-    bitmapFreeFileSpace(dir->dirEntries[i].size, dir->dirEntries[i].location);
-    dir->dirEntries[i].location = 0;
-    dir->dirEntries[i].size = 0;
-    dirWrite(dir, dir->dirEntries[0].location);
+    bitmapFreeFileSpace(dir[i].size, dir[i].location);
+    dir[i].location = 0;
+    dir[i].size = 0;
+    dirWrite(dir, dir[0].location);
     dirResetWorking();
     free(dir);
     dir=NULL;
@@ -419,7 +419,7 @@ int fs_rmdir(const char *pathname)
 char * fs_getcwd(char *pathname, size_t size)
 {
     int maxDepth = 30;
-    Dir * dir = dirInstance();
+    DirEntry * dir = dirInstance();
     char tokens[maxDepth][NAMELEN];
     dirCopyWorking(dir);
     pathname[0] = '\0';
@@ -430,19 +430,19 @@ char * fs_getcwd(char *pathname, size_t size)
 
     int tokenCount = 0;
     while(1){
-        if (dir->dirEntries[0].location == dir->dirEntries[1].location){
+        if (dir[0].location == dir[1].location){
             break;
         }
-        // printf(". location - %lu\n", dir->dirEntries[0].location);
-        // printf(".. location - %lu\n", dir->dirEntries[1].location);
-        uint64_t lastLocation = dir->dirEntries[0].location;
-        dirRead(dir,dir->dirEntries[1].location);
+        // printf(". location - %lu\n", dir[0].location);
+        // printf(".. location - %lu\n", dir[1].location);
+        uint64_t lastLocation = dir[0].location;
+        dirRead(dir,dir[1].location);
         
-        // printf("new . location - %lu\n", dir->dirEntries[0].location);
-        // printf("new .. location - %lu\n", dir->dirEntries[1].location);
+        // printf("new . location - %lu\n", dir[0].location);
+        // printf("new .. location - %lu\n", dir[1].location);
         int i;
         for(i = 0; i < MAXDIRENTRIES; i++){
-            if(dir->dirEntries[i].location == lastLocation){
+            if(dir[i].location == lastLocation){
                 break;
             }
         }
@@ -453,7 +453,7 @@ char * fs_getcwd(char *pathname, size_t size)
 
             return NULL;
         }
-        strcpy(tokens[tokenCount], dir->dirEntries[i].name);
+        strcpy(tokens[tokenCount], dir[i].name);
         tokenCount++;
         if (tokenCount == maxDepth){
             break;
