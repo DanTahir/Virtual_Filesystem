@@ -107,8 +107,14 @@ int displayFiles (fdDir * dirp, int flall, int fllong)
 			{
 			if (fllong)
 				{
+				Dir * dir = dirInstance();
+				dirCopyWorking(dir);
+				dirSetWorking(dirp->directoryStartLocation);
 				fs_stat (di->d_name, &statbuf);
 				printf ("%s    %9ld   %s\n", fs_isDir(di->d_name)?"D":"-", statbuf.st_size, di->d_name);
+				dirSetWorking(dir->dirEntries[0].location);
+				free(dir);
+				dir=NULL;
 				}
 			else
 				{
@@ -222,10 +228,8 @@ int cmd_ls (int argcnt, char *argvec[])
 	else   // no pathname/filename specified - use cwd
 		{
 		char * path = fs_getcwd(cwd, DIRMAX_LEN);	//get current working directory
-		printf("getting current working directory - %s\n", path);
 		fdDir * dirp;
 		dirp = fs_opendir (path);
-		printf("Is dir open? Location = %lu", dirp->directoryStartLocation);
 		return (displayFiles (dirp, flall, fllong));
 		}
 #endif

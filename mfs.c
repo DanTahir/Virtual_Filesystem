@@ -220,7 +220,6 @@ fdDir * fs_opendir(const char *pathname){
     }
 
     if(dirToOpen[0]=='\0'){
-        printf("dir to open is blank\n");
         fdDir* myDir = malloc(sizeof(fdDir));
         myDir->d_reclen = sizeof(fdDir) ;
         myDir->dirEntryPosition = 1 ;

@@ -28,7 +28,6 @@ uint64_t globalBlockSize;
 uint64_t isVCBSet(uint64_t blockSize){
 
     globalBlockSize = blockSize;
-    printf("global block size is set at %lu\n", globalBlockSize);
 
     void * tempBuffer = malloc(blockSize);
 

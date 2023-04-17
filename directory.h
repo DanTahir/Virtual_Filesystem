@@ -54,7 +54,7 @@ void dirSetWorking(uint64_t location);
 // reread the working directory from the volume
 void dirResetWorking();
 // allocate memory for the working directory and set it
-void dirInitWorking(uint64_t location, uint64_t blockCount, uint64_t blockSize);
+void dirInitWorking(uint64_t location);
 // free the working directory's memory
 void dirFreeWorking();
 // advance a directory to a given position on the directory tree, returning the last node in the

@@ -18,9 +18,7 @@
 Dir * workingDir;
 
 Dir * dirInstance(){
-    printf("getting vcb\n");
     VCB * vcb = getVCBG();
-    printf("mallocing dir\n");
     Dir * dir = malloc(roundUpDiv(sizeof(Dir), vcb->blockSize)*vcb->blockSize);
     free(vcb);
     return dir;
@@ -146,7 +144,7 @@ void dirResetWorking(){
 }
 
 // this allocates memory for the working directory and then sets it
-void dirInitWorking(uint64_t location, uint64_t blockCount, uint64_t blockSize){
+void dirInitWorking(uint64_t location){
     workingDir = dirInstance();
     dirRead(workingDir, location);
 }
