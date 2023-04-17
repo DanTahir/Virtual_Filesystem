@@ -36,26 +36,12 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 	if (retVal == 0){
 		printf("running setVCB\n");
 		setVCB(numberOfBlocks, blockSize);
-		uint64_t bitmapBytes = roundUpDiv(numberOfBlocks, BIT);
-		byte * bitmap = malloc(bitmapBytes);
-		bitmapRangeReset(bitmap, 0, numberOfBlocks);
-		bitmapSet(bitmap, 0);
-		uint64_t bitmapBlockSize = roundUpDiv(bitmapBytes, blockSize);
-		bitmapRangeSet(bitmap, 1, bitmapBlockSize);
-		bool bitmapVal = bitmapGet(bitmap, 0);	
-		printf("writing bitmap\n");
-		bitmapWrite(bitmap, numberOfBlocks, blockSize);
+		bitmapInit();
 		printf("getting VCB\n");
 		VCB * vcb = getVCBG();
 		Dir * dir = malloc(sizeof(Dir));
 		printf("writing root directory\n");
 		dirInitNew(vcb->rootDirStart);
-
-
-
-
-		free (bitmap);
-		bitmap = NULL;
 
 
 	}

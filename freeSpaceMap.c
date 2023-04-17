@@ -21,26 +21,42 @@ static void reset(byte *, byte);
 
 /* CAREFUL WITH pos AND BITMAP SIZE! */
 
+// malloc a bitmap
+byte * bitmapInstance(){
+    VCB * vcb = getVCBG();
+    uint64_t bitmapBytes = roundUpDiv(vcb->blockCount, BIT);
+    byte * bitmap = malloc(roundUpDiv(bitmapBytes, vcb->blockSize)*vcb->blockSize);
+    return bitmap;
+}
+
+// this creates the initial bitmap
+void bitmapInit(){
+    VCB * vcb = getVCBG();
+
+    uint64_t bitmapBytes = roundUpDiv(vcb->blockCount, BIT);
+    byte * bitmap = bitmapInstance();
+    bitmapRangeReset(bitmap, 0, vcb->blockCount);
+    bitmapSet(bitmap, 0);
+    uint64_t bitmapBlockSize = roundUpDiv(bitmapBytes, vcb->blockSize);
+    bitmapRangeSet(bitmap, 1, bitmapBlockSize);
+    bool bitmapVal = bitmapGet(bitmap, 0);	
+    printf("writing bitmap\n");
+    bitmapWrite(bitmap, vcb->blockCount, vcb->blockSize);
+}
+
 // this reads the bitmap from disk into the passed-in byte array
 void bitmapRead  (byte * bitmap, uint64_t blockCount, uint64_t blockSize){
     uint64_t bitmapBytes = roundUpDiv(blockCount, BIT);
     uint64_t blocksToRead = roundUpDiv(bitmapBytes, blockSize);
-    void * tempBuffer = malloc(blocksToRead * blockSize);
-    LBAread(tempBuffer, blocksToRead, 1);
-    memcpy(bitmap, tempBuffer, bitmapBytes);
-    free (tempBuffer);
-    tempBuffer = NULL;
+    LBAread(bitmap, blocksToRead, 1);
+
 }
 
 // this writes the passed-in byte array to disk as the bitmap
 void bitmapWrite (byte * bitmap, uint64_t blockCount, uint64_t blockSize){
     uint64_t bitmapBytes = roundUpDiv(blockCount, BIT);
     uint64_t blocksToWrite = roundUpDiv(bitmapBytes, blockSize);
-    void * tempBuffer = malloc(blocksToWrite * blockSize);
-    memcpy(tempBuffer, bitmap, bitmapBytes);
-    LBAwrite(tempBuffer, blocksToWrite, 1);
-    free (tempBuffer);
-    tempBuffer = NULL;
+    LBAwrite(bitmap, blocksToWrite, 1);
 }
 
 // this sets a range of bits in the passed-in byte array to 1. It is
@@ -136,7 +152,7 @@ uint64_t bitmapFirstFreeRange(byte * bitmap, uint64_t blockCount, uint64_t range
 
 uint64_t bitmapFirstFreeFilespace(uint64_t fileSize){
     VCB * vcb = getVCBG();
-    byte * bitmap = malloc(roundUpDiv(vcb->blockCount, BIT));
+    byte * bitmap = bitmapInstance();
     bitmapRead(bitmap, vcb->blockCount, vcb->blockSize);
     uint64_t range = roundUpDiv(fileSize, vcb->blockSize);
     uint64_t freeLocation = bitmapFirstFreeRange(bitmap, vcb->blockCount, range);
@@ -150,7 +166,7 @@ uint64_t bitmapFirstFreeFilespace(uint64_t fileSize){
 int bitmapFreeFileSpace(uint64_t fileSize, uint64_t location){
     VCB * vcb = getVCBG();
 
-    byte * bitmap = malloc(roundUpDiv(vcb->blockCount,BIT));
+    byte * bitmap = bitmapInstance();
     bitmapRead(bitmap, vcb->blockCount, vcb->blockSize);
     uint64_t blocksToFree = roundUpDiv(fileSize, vcb->blockSize);
     bitmapRangeReset(bitmap, location, blocksToFree);
@@ -169,7 +185,7 @@ int bitmapFreeFileSpace(uint64_t fileSize, uint64_t location){
 int bitmapAllocFileSpace(uint64_t fileSize, uint64_t location){
     VCB * vcb = getVCBG();
 
-    byte * bitmap = malloc(roundUpDiv(vcb->blockCount,BIT));
+    byte * bitmap = bitmapInstance();
     bitmapRead(bitmap, vcb->blockCount, vcb->blockSize);
     uint64_t blocksToAlloc = roundUpDiv(fileSize, vcb->blockSize);
     bitmapRangeSet(bitmap, location, blocksToAlloc);

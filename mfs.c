@@ -185,8 +185,8 @@ if(i == MAXDIRENTRIES){
 VCB * vcb = getVCBG();
 
 buf->st_size=entry->size;                   /* total size, in bytes */
-buf->st_blksize=vcb->blockCount; 		    /* blocksize for file system I/O */
-buf->st_blocks=vcb->blockSize;  		    /* number of 512B blocks allocated */
+buf->st_blksize=vcb->blockSize; 		    /* blocksize for file system I/O */
+buf->st_blocks=vcb->blockCount;  		    /* number of 512B blocks allocated */
 
 buf->st_accesstime=0;   	                /* time of last access */
 buf->st_modtime=0;    	                    /* time of last modification */

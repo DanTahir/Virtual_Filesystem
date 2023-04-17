@@ -26,6 +26,8 @@
 typedef enum{false=0, true} bool;
 typedef u_int8_t byte;
 
+// create the bitmap
+void bitmapInit();
 // read the bitmap from disk into the passed-in byte array
 void bitmapRead      (byte * bitmap, uint64_t blockCount, uint64_t blockSize);
 // write the passed-in byte array to the disk as the bitmap
