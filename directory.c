@@ -18,7 +18,9 @@
 Dir * workingDir;
 
 Dir * dirInstance(){
+    printf("getting vcb\n");
     VCB * vcb = getVCBG();
+    printf("mallocing dir\n");
     Dir * dir = malloc(roundUpDiv(sizeof(Dir), vcb->blockSize)*vcb->blockSize);
     free(vcb);
     return dir;

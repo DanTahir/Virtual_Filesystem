@@ -26,6 +26,8 @@
 typedef enum{false=0, true} bool;
 typedef u_int8_t byte;
 
+// malloc a bitmap
+byte * bitmapInstance();
 // create the bitmap
 void bitmapInit();
 // read the bitmap from disk into the passed-in byte array

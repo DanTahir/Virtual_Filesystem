@@ -91,13 +91,11 @@ uint64_t setVCB(uint64_t blockCount, uint64_t blockSize){
 */
 VCB * getVCB(uint64_t blockSize){
     void * tempBuffer = malloc(blockSize);
-
     LBAread(tempBuffer, 1, 0);
 
     VCB * vcb = malloc(sizeof(VCB));
 
     memcpy(vcb, tempBuffer, sizeof(VCB));
-
     free (tempBuffer);
     tempBuffer = NULL;
 

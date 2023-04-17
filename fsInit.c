@@ -44,6 +44,8 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 		dirInitNew(vcb->rootDirStart);
 
 
+
+
 	}
 	else {
 		printf("running getVCB\n");
@@ -53,7 +55,7 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 			vcb->blockCount,
 			vcb->freeSpaceMapStart);
 		uint64_t bitmapBytes = roundUpDiv(numberOfBlocks, BIT);
-		byte * bitmap = malloc(bitmapBytes);
+		byte * bitmap = bitmapInstance();
 		bitmapRead(bitmap, numberOfBlocks, blockSize);
 		bool bitmapVal = bitmapGet(bitmap, 4);
 		printf("bitvalue of position 4 - %d\n", bitmapVal);
