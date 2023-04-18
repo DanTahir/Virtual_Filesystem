@@ -61,7 +61,7 @@ uint64_t isVCBSet(uint64_t blockSize){
 * structure. LBAwrite() would write the data into the disk
 */
 uint64_t setVCB(uint64_t blockCount, uint64_t blockSize){
-    VCB * vcb = malloc(sizeof(VCB));
+    VCB * vcb = malloc(roundUpDiv(sizeof(VCB), blockSize) * blockSize);
 
     vcb->signature = SIGNAT;
     vcb->blockSize = blockSize;
@@ -72,12 +72,8 @@ uint64_t setVCB(uint64_t blockCount, uint64_t blockSize){
     uint64_t blocksInMap = roundUpDiv(bytesInMap, blockSize);
     vcb->rootDirStart = vcb->freeSpaceMapStart + blocksInMap;
 
-    void * tempBuffer = malloc(blockSize);
-
-    memcpy(tempBuffer, vcb, sizeof(VCB));
-    LBAwrite(tempBuffer, 1, 0);
+    LBAwrite(vcb, 1, 0);
     free(vcb);
-    free(tempBuffer);
     return 1;
 
 }
@@ -89,14 +85,10 @@ uint64_t setVCB(uint64_t blockCount, uint64_t blockSize){
 * block from the disk.
 */
 VCB * getVCB(uint64_t blockSize){
-    void * tempBuffer = malloc(blockSize);
-    LBAread(tempBuffer, 1, 0);
+    
 
-    VCB * vcb = malloc(sizeof(VCB));
-
-    memcpy(vcb, tempBuffer, sizeof(VCB));
-    free (tempBuffer);
-    tempBuffer = NULL;
+    VCB * vcb = malloc(roundUpDiv(sizeof(VCB), blockSize) * blockSize);
+    LBAread(vcb, 1, 0);
 
     return vcb;
 
@@ -104,6 +96,12 @@ VCB * getVCB(uint64_t blockSize){
 
 VCB * getVCBG(){
     return getVCB(globalBlockSize);
+}
+
+void vcbChangeRootDirLoc(uint64_t location){
+    VCB * vcb = getVCBG();
+    vcb->rootDirStart = location;
+    LBAwrite(vcb, 1, 0);
 }
 
 uint64_t roundUpDiv(uint64_t a, uint64_t b){

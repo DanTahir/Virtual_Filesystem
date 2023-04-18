@@ -50,6 +50,11 @@ VCB * getVCBG();
 // this gets the vcb
 VCB * getVCB(uint64_t blockSize);
 
+// this resets the root directory location to a new location, 
+// for use by the dirAddEntry function in case the root dir
+// changes size
+void vcbChangeRootDirLoc(uint64_t location);
+
 // this divides numbers returning one greater if there is
 // a remainder
 uint64_t roundUpDiv(uint64_t a, uint64_t b);
