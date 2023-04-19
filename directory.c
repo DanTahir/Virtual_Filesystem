@@ -205,6 +205,7 @@ int dirTraversePath(DirEntry ** dirp, const char * pathName, char * endName){
         char * nextToken = strtok(NULL, "/");
         if (nextToken != NULL)
         {
+            printf("dirTraversePath: nextToken = %s", nextToken);
             int i;
             for(i = 0; i < dirCount; i++){
                 printf("dirTraversePath: getting to strcmp\n");
@@ -217,9 +218,10 @@ int dirTraversePath(DirEntry ** dirp, const char * pathName, char * endName){
                         dirRead(dirp, dir[i].location);
                         dirCount = (dirp[0])->size / sizeof(DirEntry);
                         dir = *dirp;
+                        i = 0;
                         printf("dirTraversePath: dir[0].size = %lu\n", (dirp[0])->size);
                         printf("dirTraversePath: dir[0].location = %lu\n", (dirp[0])->location);
-
+                        printf("dirTraversePath: i = %d\n", i);
                         break;
                     }
                     else{
@@ -232,6 +234,7 @@ int dirTraversePath(DirEntry ** dirp, const char * pathName, char * endName){
                     }
                 }
             }
+            printf("dirTraversePath: i = %d\n", i);
             if (i == dirCount){
                 printf("path node not found\n");
                 free(vcb);
