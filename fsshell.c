@@ -113,7 +113,7 @@ int displayFiles (fdDir * dirp, int flall, int fllong)
 				// fs_readdir, so we have to set the working directory to the directory
 				// pointed to by fs_readdir, then set it back once we're done reading
 				DirEntry * dir = dirInstance();
-				dirCopyWorking(dir);
+				dirCopyWorking(&dir);
 				dirSetWorking(dirp->directoryStartLocation);
 				fs_stat (di->d_name, &statbuf);
 				printf ("%s    %9ld   %s\n", fs_isDir(di->d_name)?"D":"-", statbuf.st_size, di->d_name);
@@ -234,7 +234,9 @@ int cmd_ls (int argcnt, char *argvec[])
 		{
 		char * path = fs_getcwd(cwd, DIRMAX_LEN);	//get current working directory
 		fdDir * dirp;
+		printf("cmd_ls: getting to openDir\n");
 		dirp = fs_opendir (path);
+		printf("cmd_ls: getting to displayFiles\n");
 		return (displayFiles (dirp, flall, fllong));
 		}
 #endif
@@ -264,8 +266,9 @@ int cmd_touch (int argcnt, char *argvec[])
                         return (-1);
                 }
 
-
+		printf("running b_open\n");
         testfs_src_fd = b_open (src, O_WRONLY | O_CREAT);
+		printf("passing b_open, running b_close\n");
         if (testfs_src_fd < 0)
 	    return (testfs_src_fd);	//return with error
 

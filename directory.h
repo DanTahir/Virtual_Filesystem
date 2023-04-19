@@ -20,7 +20,7 @@
 
 #include "freeSpaceMap.h"
 
-#define MAXDIRENTRIES 35
+
 #define NAMELEN 25
 
 typedef struct DirEntry {
@@ -42,7 +42,7 @@ uint64_t dirInitNew(uint64_t parentDirLoc);
 // writes a directory to volume
 void dirWrite(DirEntry * dir, uint64_t location);
 // reads a directory from volume
-void dirRead(DirEntry * dir, uint64_t location);
+void dirRead(DirEntry ** dirp, uint64_t location);
 // set the working directory to a given volume location
 void dirSetWorking(uint64_t location);
 // reread the working directory from the volume
@@ -57,4 +57,9 @@ int dirTraversePath(DirEntry * dir, const char * pathName, char * endName);
 // this copies the working directory to the passed-in directory so
 // the passed-in directory can be traversed without changing the
 // working directory
-void dirCopyWorking(DirEntry * dir);
+void dirCopyWorking(DirEntry ** dir);
+// this adds a new entry to the directory, expanding the size of the directory
+int dirAddEntry(DirEntry ** dirp, char * name, uint64_t location, uint64_t size, byte isDir);
+// this removes an entry from the directory, shrinking the size of the directory
+// it's very important that this never gets called on . or ..
+int dirRemoveEntry(DirEntry ** dirp, int index);

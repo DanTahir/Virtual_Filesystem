@@ -101,7 +101,9 @@ VCB * getVCBG(){
 void vcbChangeRootDirLoc(uint64_t location){
     VCB * vcb = getVCBG();
     vcb->rootDirStart = location;
-    LBAwrite(vcb, 1, 0);
+    LBAwrite(vcb, 1, 0); 
+    LBAread(vcb, 1, 0);
+    printf("vcbChangeRootDirLoc: root dir loc = %lu\n", vcb->rootDirStart);
 }
 
 uint64_t roundUpDiv(uint64_t a, uint64_t b){

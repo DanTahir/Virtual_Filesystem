@@ -86,7 +86,9 @@ b_io_fd b_open (char * filename, int flags)
 	// first we set up the directory and follow the path to the directory and filename
 
 	DirEntry * dir = dirInstance();
-	dirCopyWorking(dir);
+	dirCopyWorking(&dir);
+	printf("b_open: dir[0].location is %lu\n", dir[0].location);
+	printf("b_open: dir[0].size is %lu\n", dir[0].size);
 	char realFileName[NAMELEN];
 	int traverseReturn = dirTraversePath(dir, filename, realFileName);
 	if(traverseReturn == -1){
@@ -95,9 +97,12 @@ b_io_fd b_open (char * filename, int flags)
 	}
 
 	// We loop through the directory and try to find the filename
-
+	uint64_t dirCount = dir[0].size / sizeof(DirEntry);
+	printf("b_open: dir[0].location is %lu\n", dir[0].location);
+	printf("b_open: dir[0].size is %lu\n", dir[0].size);
+	printf("b_open: dirCount is %lu\n", dirCount);
 	int i;
-	for (i = 2; i < MAXDIRENTRIES; i++){
+	for (i = 2; i < dirCount; i++){
 		int strcmpVal = strncmp(dir[i].name, realFileName, NAMELEN - 1);
 		if(strcmpVal == 0){
 			break;
@@ -108,29 +113,21 @@ b_io_fd b_open (char * filename, int flags)
 	// we say "file not found" and quit. If it is, we make sure the directory isn't
 	// full, then we create a file of size zero with a buffer the size of one block
 	// (there has to be a buffer so b_getFCB recognizes it as taken);
-	if (i == MAXDIRENTRIES){
+	if (i == dirCount){
 		if(flags & O_CREAT){
-			for (i = 2; i < MAXDIRENTRIES; i++){
-				if(dir[i].name[0] == '\0'){
-					break;
-				}
-			}
-			if (i == MAXDIRENTRIES){
-				printf("Directory full\n");
-				free(dir);
-				dir=NULL;
+			printf("b_open: getting to dirAddEntry %lu\n", dirCount);
+			int addEntryReturn = dirAddEntry(&dir, realFileName, 0, 0, 0);
+			printf("b_open: getting past dirAddEntry %lu\n", dirCount);
+			printf("b_open: dir size = %lu\n", dir[0].size);
+			printf("b_open: dir location = %lu\n", dir[0].location);
+			if(addEntryReturn == -1){
+				printf("Couldn't add entry to directory\n");
 				return -1;
 			}
-			strncpy(dir[i].name, realFileName, NAMELEN - 1);
-			dir[i].location = 0;
-			dir[i].size = 0;
-			dir[i].isDir = 0;
-			VCB * vcb = getVCBG();
-			dirWrite(dir, dir[0].location);
-			dirResetWorking();
-			free(vcb);
-			vcb=NULL;
 			fcbArray[returnFd].dir = dir;
+			printf("b_open: fcbArray[returnFd].dir size = %lu\n", fcbArray[returnFd].dir[0].size);
+			printf("b_open: fcbArray[returnFd].dir location = %lu\n", fcbArray[returnFd].dir[0].location);
+
 			fcbArray[returnFd].dirPos = i;
 			fcbArray[returnFd].buf = fileInstance(1);
 			fcbArray[returnFd].buflen = 0;
@@ -246,7 +243,7 @@ int b_write (b_io_fd fd, char * buffer, int count)
 
 	VCB * vcb = getVCBG();
 	// update the directory in case it's been changed since the file was opened or last written
-	dirRead(fcbArray[fd].dir, 
+	dirRead(&(fcbArray[fd].dir), 
 		fcbArray[fd].dir[0].location);
 
 	// If the write operation overruns the existing length of the file, we need to do a lot
@@ -371,6 +368,9 @@ int b_close (b_io_fd fd)
 			return -1;
 		}
 		// free and zero everything
+		printf("b_close: entering b_close\n");
+		printf("b_close: dir size = %lu\n", fcbArray[fd].dir[0].size);
+		printf("b_close: dir location = %lu\n", fcbArray[fd].dir[0].location);
 		free(fcbArray[fd].buf);
 		fcbArray[fd].buf = NULL;
 		free(fcbArray[fd].dir);
