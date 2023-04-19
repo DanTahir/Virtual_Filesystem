@@ -395,13 +395,13 @@ int dirRemoveEntry(DirEntry ** dirp, int index){
 
     DirEntry * newDir = malloc(roundUpDiv(sizeNew, blockSize)* blockSize);
     for(int i = 0; i < index; i++){
-        strcmp(newDir[i].name, dir[i].name);
+        strcpy(newDir[i].name, dir[i].name);
         newDir[i].location = dir[i].location;
         newDir[i].size = dir[i].size;
         newDir[i].isDir = dir[i].isDir;
     }    
     for(int i = index; i < dirCountNew; i++){
-        strcmp(newDir[i].name, dir[i + 1].name);
+        strcpy(newDir[i].name, dir[i + 1].name);
         newDir[i].location = dir[i + 1].location;
         newDir[i].size = dir[i + 1].size;
         newDir[i].isDir = dir[i + 1].isDir;
@@ -427,8 +427,6 @@ int dirRemoveEntry(DirEntry ** dirp, int index){
 
     dirWrite(newDir, newDir[0].location);
     dirResetWorking();
-    free(dir);
-    dir=NULL;
     dirRead(dirp, newDir[0].location);
 
 }
