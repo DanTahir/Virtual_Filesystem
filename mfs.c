@@ -21,7 +21,7 @@ int fs_mkdir(const char *pathname, mode_t mode){
     DirEntry * dir = dirInstance();
     dirCopyWorking(&dir);
     char dirToMake[NAMELEN];
-    int traverseReturn = dirTraversePath(dir, pathname, dirToMake);
+    int traverseReturn = dirTraversePath(&dir, pathname, dirToMake);
     printf("dir to make - %s\n", dirToMake);
     if(traverseReturn == -1){
         printf("traverse path failed");
@@ -63,7 +63,7 @@ int fs_mkdir(const char *pathname, mode_t mode){
 int fs_setcwd(char *pathname){
 
     char finalDirName[NAMELEN];
-    int traverseRet = dirTraversePath(workingDir, pathname, finalDirName);
+    int traverseRet = dirTraversePath(&workingDir, pathname, finalDirName);
     if (traverseRet == -1) {
         return -1;
     }
@@ -102,7 +102,7 @@ char fileName[NAMELEN];
 Traverse the file system to the exact location of the file and load the appropriate directory.
 if the entries in the proper directory have a matching name to the targeted file name free the struct
 */
-int traverseReturn = dirTraversePath(dir, path, fileName);
+int traverseReturn = dirTraversePath(&dir, path, fileName);
 if (traverseReturn == -1){
     printf("path invalid\n");
     return -1;
@@ -142,7 +142,7 @@ targeted file name free the struct
 */
 char fileName[NAMELEN];
 DirEntry* entry;
-int traverseReturn = dirTraversePath(dir, path, fileName);
+int traverseReturn = dirTraversePath(&dir, path, fileName);
 if (traverseReturn == -1){
     printf("path invalid\n");
     free(dir);
@@ -190,7 +190,7 @@ fdDir * fs_opendir(const char *pathname){
 
     dirCopyWorking(&dir);
     printf("fs_opendir: making it to dirtraversepath\n");
-    int traverseReturn = dirTraversePath(dir,pathname,dirToOpen);
+    int traverseReturn = dirTraversePath(&dir,pathname,dirToOpen);
     if(traverseReturn==-1){
         //Error, free space and put pointer to NULL
         printf("Traverse Failed");
@@ -206,8 +206,9 @@ fdDir * fs_opendir(const char *pathname){
         myDir->d_reclen = sizeof(fdDir) ;
         myDir->dirEntryPosition = 0 ;
         myDir->directoryStartLocation =dir[0].location;
-
-        free(dir);
+        printf("fs_opendir: making it to root free dir\n");
+        //free(dir);
+        printf("fs_opendir: making it past root free dir\n");
         free(vcb);
         return  myDir;
     }
@@ -219,7 +220,7 @@ fdDir * fs_opendir(const char *pathname){
         if(strncmp(dir[i].name, dirToOpen, NAMELEN-1) == 0 && dir[i].isDir){
             //Dir found, Load it into memory
             fdDir* myDir = malloc(sizeof(fdDir));
-            myDir->d_reclen = sizeof(fdDir) ;
+            myDir->d_reclen = sizeof(fdDir);
             myDir->dirEntryPosition = 0;
             myDir->directoryStartLocation =dir[i].location;
             printf("fs_opendir: making it to free dir\n");
@@ -332,7 +333,7 @@ int fs_rmdir(const char *pathname)
     //DirEntry* entry = &dir[i];
 
     // Check for Valid Path
-    int traverseReturn = dirTraversePath(dir, pathname, dirNameToDel);
+    int traverseReturn = dirTraversePath(&dir, pathname, dirNameToDel);
     printf("Dir to Delete - %s\n", dirNameToDel);
     if(traverseReturn != 0){
         printf("Traverse path failed\n");

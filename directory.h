@@ -53,11 +53,11 @@ void dirInitWorking(uint64_t location);
 void dirFreeWorking();
 // advance a directory to a given position on the directory tree, returning the last node in the
 // path as a string (which must be allocated memory)
-int dirTraversePath(DirEntry * dir, const char * pathName, char * endName);
+int dirTraversePath(DirEntry ** dirp, const char * pathName, char * endName);
 // this copies the working directory to the passed-in directory so
 // the passed-in directory can be traversed without changing the
 // working directory
-void dirCopyWorking(DirEntry ** dir);
+void dirCopyWorking(DirEntry ** dirp);
 // this adds a new entry to the directory, expanding the size of the directory
 int dirAddEntry(DirEntry ** dirp, char * name, uint64_t location, uint64_t size, byte isDir);
 // this removes an entry from the directory, shrinking the size of the directory

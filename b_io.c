@@ -90,7 +90,7 @@ b_io_fd b_open (char * filename, int flags)
 	printf("b_open: dir[0].location is %lu\n", dir[0].location);
 	printf("b_open: dir[0].size is %lu\n", dir[0].size);
 	char realFileName[NAMELEN];
-	int traverseReturn = dirTraversePath(dir, filename, realFileName);
+	int traverseReturn = dirTraversePath(&dir, filename, realFileName);
 	if(traverseReturn == -1){
 		printf("invalid path\n");
 		return -1;

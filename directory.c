@@ -171,7 +171,7 @@ void dirFreeWorking(){
 // last node as a string, allowing various functions to perform different operations
 // on the last node, for example mkdir uses it to create a directory, while rmdir
 // uses it to remove a directory
-int dirTraversePath(DirEntry * dir, const char * pathName, char * endName){
+int dirTraversePath(DirEntry ** dirp, const char * pathName, char * endName){
     
 
     VCB * vcb = getVCBG();
@@ -180,7 +180,7 @@ int dirTraversePath(DirEntry * dir, const char * pathName, char * endName){
 
     // check whether it's an absolute path or not
     if (pathNonConst[0] == '/'){
-        dirRead(&dir, vcb->rootDirStart);
+        dirRead(dirp, vcb->rootDirStart);
     }
     char * token = strtok(pathNonConst, "/");
 
@@ -196,9 +196,10 @@ int dirTraversePath(DirEntry * dir, const char * pathName, char * endName){
     // If the token isn't found in a given directory, or if it's found but isn't a
     // directory, we immediately return -1. 
 
-    uint64_t dirCount = dir[0].size / sizeof(DirEntry);
-    printf("dirTraversePath: dir[0].size = %lu\n", dir[0].size);
-    printf("dirTraversePath: dir[0].location = %lu\n", dir[0].location);
+    DirEntry * dir = *dirp;
+    uint64_t dirCount = (dirp[0])->size / sizeof(DirEntry);
+    printf("dirTraversePath: dir[0].size = %lu\n", (dirp[0])->size);
+    printf("dirTraversePath: dir[0].location = %lu\n",(dirp[0])->location);
 
     while(token != NULL) {
         char * nextToken = strtok(NULL, "/");
@@ -206,13 +207,18 @@ int dirTraversePath(DirEntry * dir, const char * pathName, char * endName){
         {
             int i;
             for(i = 0; i < dirCount; i++){
+                printf("dirTraversePath: getting to strcmp\n");
+                printf("dirTraverseePath: dirp[i]->name = %s\n", dir[i].name);
                 int compare = strcmp(token, dir[i].name);
                 if (compare == 0){
+                    printf("dirTraversePath: getting to isDir\n");
                     if(dir[i].isDir == 1){
-                        dirRead(&dir, dir[i].location);
-                        dirCount = dir[0].size / sizeof(DirEntry);
-                        printf("dirTraversePath: dir[0].size = %lu\n", dir[0].size);
-                        printf("dirTraversePath: dir[0].location = %lu\n", dir[0].location);
+                        printf("dirTraversePath: getting to dirRead\n");
+                        dirRead(dirp, dir[i].location);
+                        dirCount = (dirp[0])->size / sizeof(DirEntry);
+                        dir = *dirp;
+                        printf("dirTraversePath: dir[0].size = %lu\n", (dirp[0])->size);
+                        printf("dirTraversePath: dir[0].location = %lu\n", (dirp[0])->location);
 
                         break;
                     }
@@ -358,7 +364,12 @@ int dirAddEntry(DirEntry ** dirp, char * name, uint64_t location, uint64_t size,
     printf("dirAddEntry: newDir[0].location = %lu\n", newDir[0].location);
 
     dirWrite(newDir, newDir[0].location);
-    dirSetWorking(newDir[0].location);
+    if(dir[0].location == workingDir[0].location){
+        dirSetWorking(newDir[0].location);
+    }
+    else{
+        dirResetWorking();
+    }
     dirRead(dirp, newDir[0].location);
 
     //dirp = &newDir;
@@ -415,6 +426,6 @@ int dirRemoveEntry(DirEntry ** dirp, int index){
     dirResetWorking();
     free(dir);
     dir=NULL;
-    dirp = &newDir;
+    dirRead(dirp, newDir[0].location);
 
 }
