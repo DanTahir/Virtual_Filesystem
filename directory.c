@@ -46,7 +46,6 @@ uint64_t dirInitNew(uint64_t parentDirLoc){
         dir=NULL;
         return freeSpace;
     }
-    printf("dirInitNew: freespace is %lu\n", freeSpace);
     bitmapAllocFileSpace(sizeof(DirEntry) * 2, freeSpace);
     /*
     uint64_t dirInBlocks = roundUpDiv(sizeof(DirEntry) * MAXDIRENTRIES, blockSize);
@@ -66,8 +65,6 @@ uint64_t dirInitNew(uint64_t parentDirLoc){
     dir[0].location = freeSpace;
     dir[0].size = sizeof(DirEntry) * 2;
     dir[0].isDir = 1;
-    printf("dirInitNew: dir[0].location is %lu\n", dir[0].location);
-    printf("dirInitNew: dir[0].size is %lu\n", dir[0].size);
 
 
     // Next we write the parent entry for the directory
@@ -80,8 +77,6 @@ uint64_t dirInitNew(uint64_t parentDirLoc){
     dirWrite(dir, freeSpace);
 
     dirRead(&dir, freeSpace);
-    printf("dirInitNew: after dirRead, dir[0].location is %lu\n", dir[0].location);
-    printf("dirInitNew: after dirRead, dir[0].size is %lu\n", dir[0].size);
 
 
     // Commenting Out as not Required for now
@@ -103,8 +98,6 @@ void dirWrite(DirEntry * dir, uint64_t location){
     VCB * vcb = getVCBG();
 
     uint64_t dirInBlocks = roundUpDiv(dir[0].size, vcb->blockSize);
-    printf("dirWrite: dir[0].size = %lu\n", dir[0].size);
-    printf("dirWrite: dirInBlocks = %lu\n", dirInBlocks);
     LBAwrite(dir, dirInBlocks, location);
     free(vcb);
     vcb=NULL;    
@@ -198,30 +191,20 @@ int dirTraversePath(DirEntry ** dirp, const char * pathName, char * endName){
 
     DirEntry * dir = *dirp;
     uint64_t dirCount = (dirp[0])->size / sizeof(DirEntry);
-    printf("dirTraversePath: dir[0].size = %lu\n", (dirp[0])->size);
-    printf("dirTraversePath: dir[0].location = %lu\n",(dirp[0])->location);
 
     while(token != NULL) {
         char * nextToken = strtok(NULL, "/");
         if (nextToken != NULL)
         {
-            printf("dirTraversePath: nextToken = %s", nextToken);
             int i;
             for(i = 0; i < dirCount; i++){
-                printf("dirTraversePath: getting to strcmp\n");
-                printf("dirTraverseePath: dirp[i]->name = %s\n", dir[i].name);
                 int compare = strcmp(token, dir[i].name);
                 if (compare == 0){
-                    printf("dirTraversePath: getting to isDir\n");
                     if(dir[i].isDir == 1){
-                        printf("dirTraversePath: getting to dirRead\n");
                         dirRead(dirp, dir[i].location);
                         dirCount = (dirp[0])->size / sizeof(DirEntry);
                         dir = *dirp;
                         i = 0;
-                        printf("dirTraversePath: dir[0].size = %lu\n", (dirp[0])->size);
-                        printf("dirTraversePath: dir[0].location = %lu\n", (dirp[0])->location);
-                        printf("dirTraversePath: i = %d\n", i);
                         break;
                     }
                     else{
@@ -234,7 +217,6 @@ int dirTraversePath(DirEntry ** dirp, const char * pathName, char * endName){
                     }
                 }
             }
-            printf("dirTraversePath: i = %d\n", i);
             if (i == dirCount){
                 printf("path node not found\n");
                 free(vcb);
@@ -268,11 +250,7 @@ void dirCopyWorking(DirEntry ** dirp){
     *dirp=NULL;
     VCB * vcb = getVCBG();
     *dirp = malloc(roundUpDiv(workingDir[0].size, vcb->blockSize) * vcb->blockSize);
-    printf("dirCopyWorking: working dir size = %lu\n", workingDir[0].size);
-    printf("dirCopyWorking: working dir location = %lu\n", workingDir[0].location);
     memcpy(*dirp, workingDir, workingDir[0].size);
-    printf("dirCopyWorking: copied dir size = %lu\n", (dirp[0])->size);
-    printf("dirCopyWorking: copied dir location = %lu\n", (dirp[0])->location);
 
     free(vcb);
     vcb=NULL;
@@ -288,10 +266,6 @@ int dirAddEntry(DirEntry ** dirp, char * name, uint64_t location, uint64_t size,
     uint64_t dirCount = dir[0].size / sizeof(DirEntry);
     uint64_t dirCountNew = dirCount + 1;
     uint64_t sizeNew = dirCountNew * sizeof(DirEntry);
-    printf("dirAddEntry: dir[0].size = %lu\n", dir[0].size);
-    printf("dirAddEntry: dirCount = %lu\n", dirCount);
-    printf("dirAddEntry: dirCountNew = %lu\n", dirCountNew);
-    printf("dirAddEntry: sizeNew = %lu\n", sizeNew);
     bitmapFreeFileSpace(dir[0].size, dir[0].location);
     uint64_t newLocation = bitmapFirstFreeFilespace(sizeNew);
     if (newLocation == 0){
@@ -301,7 +275,6 @@ int dirAddEntry(DirEntry ** dirp, char * name, uint64_t location, uint64_t size,
     }
     bitmapAllocFileSpace(sizeNew, newLocation);
 
-    printf("dirAddEntry: newLocation = %lu\n", newLocation);
 
 
     DirEntry * newDir = malloc(roundUpDiv(sizeNew, blockSize) * blockSize);
@@ -319,12 +292,9 @@ int dirAddEntry(DirEntry ** dirp, char * name, uint64_t location, uint64_t size,
 
     newDir[0].location = newLocation;
     newDir[0].size = sizeNew;
-    printf("dirAddEntry: dir[0].location = %lu\n", dir[0].location);
-    printf("dirAddEntry: dir[1].location = %lu\n", dir[1].location);
     if(dir[0].location == dir[1].location){ // folder is root
         newDir[1].location = newLocation;
         newDir[1].size = sizeNew;
-        printf("dirEntry: changing root dir location\n");
         vcbChangeRootDirLoc(newLocation);
 
     } 
@@ -342,18 +312,13 @@ int dirAddEntry(DirEntry ** dirp, char * name, uint64_t location, uint64_t size,
             dirToUpdate=NULL;
         }
     }
-    printf("dirAddEntry: dir[0].location = %lu", dir[0].location);
-    printf("dirAddEntry: dir[1].location = %lu", dir[1].location);
 
     if(dir[0].location != dir[1].location){ // folder is not root, we need to update the parent
         DirEntry * dirToUpdate = dirInstance();
         dirRead(&dirToUpdate, newDir[1].location);
-        printf("dirAddEntry: dirToUpdate[0].size = %lu\n", newDir[0].size);
-        printf("dirAddEntry: dir[0].location = %lu\n", dir[0].location);
         uint64_t dirCount = dirToUpdate[0].size / sizeof(DirEntry);
         int i;
         for(i = 2; i < dirCount; i++){
-            printf("dirAddEntry: dirToUpdate[i].location = %lu\n", dirToUpdate[i].location);
             if(dirToUpdate[i].location == dir[0].location){
                 break;
             }
@@ -369,8 +334,6 @@ int dirAddEntry(DirEntry ** dirp, char * name, uint64_t location, uint64_t size,
         dirToUpdate = NULL;
     }
 
-    printf("dirAddEntry: newDir[0].size = %lu\n", newDir[0].size);
-    printf("dirAddEntry: newDir[0].location = %lu\n", newDir[0].location);
 
     dirWrite(newDir, newDir[0].location);
     if(dir[0].location == workingDir[0].location){

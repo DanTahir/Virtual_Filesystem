@@ -87,8 +87,6 @@ b_io_fd b_open (char * filename, int flags)
 
 	DirEntry * dir = dirInstance();
 	dirCopyWorking(&dir);
-	printf("b_open: dir[0].location is %lu\n", dir[0].location);
-	printf("b_open: dir[0].size is %lu\n", dir[0].size);
 	char realFileName[NAMELEN];
 	int traverseReturn = dirTraversePath(&dir, filename, realFileName);
 	if(traverseReturn == -1){
@@ -98,9 +96,6 @@ b_io_fd b_open (char * filename, int flags)
 
 	// We loop through the directory and try to find the filename
 	uint64_t dirCount = dir[0].size / sizeof(DirEntry);
-	printf("b_open: dir[0].location is %lu\n", dir[0].location);
-	printf("b_open: dir[0].size is %lu\n", dir[0].size);
-	printf("b_open: dirCount is %lu\n", dirCount);
 	int i;
 	for (i = 2; i < dirCount; i++){
 		int strcmpVal = strncmp(dir[i].name, realFileName, NAMELEN - 1);
@@ -115,18 +110,12 @@ b_io_fd b_open (char * filename, int flags)
 	// (there has to be a buffer so b_getFCB recognizes it as taken);
 	if (i == dirCount){
 		if(flags & O_CREAT){
-			printf("b_open: getting to dirAddEntry %lu\n", dirCount);
 			int addEntryReturn = dirAddEntry(&dir, realFileName, 0, 0, 0);
-			printf("b_open: getting past dirAddEntry %lu\n", dirCount);
-			printf("b_open: dir size = %lu\n", dir[0].size);
-			printf("b_open: dir location = %lu\n", dir[0].location);
 			if(addEntryReturn == -1){
 				printf("Couldn't add entry to directory\n");
 				return -1;
 			}
 			fcbArray[returnFd].dir = dir;
-			printf("b_open: fcbArray[returnFd].dir size = %lu\n", fcbArray[returnFd].dir[0].size);
-			printf("b_open: fcbArray[returnFd].dir location = %lu\n", fcbArray[returnFd].dir[0].location);
 
 			fcbArray[returnFd].dirPos = i;
 			fcbArray[returnFd].buf = fileInstance(1);
@@ -186,8 +175,6 @@ b_io_fd b_open (char * filename, int flags)
 	fcbArray[returnFd].buflen = dir[i].size;
 	fcbArray[returnFd].index = 0;
 	fcbArray[returnFd].dir = dir;
-	printf("b_open: fcbArray[returnFd].dir size = %lu\n", fcbArray[returnFd].dir[0].size);
-	printf("b_open: fcbArray[returnFd].dir location = %lu\n", fcbArray[returnFd].dir[0].location);
 	fcbArray[returnFd].dirPos = i;
 	fcbArray[returnFd].flags = flags;
 
@@ -288,20 +275,15 @@ int b_write (b_io_fd fd, char * buffer, int count)
 		fileRead(fcbArray[fd].buf, 
 			fcbArray[fd].buflen, 
 			oldLocation);		
-		printf("b_write: making it to memcpy\n");
 
 		memcpy(fcbArray[fd].buf + fcbArray[fd].index, buffer, count);
 		fcbArray[fd].buflen = fcbArray[fd].index + count;
 		bitmapAllocFileSpace(fcbArray[fd].buflen, location);
-		printf("b_write: making it to fileWrite\n");
 		fileWrite(fcbArray[fd].buf, fcbArray[fd].buflen, location);
-		printf("b_write: making it to fcbArray[fd].dir\n");		
 		fcbArray[fd].dir[fcbArray[fd].dirPos].location = location;
 		fcbArray[fd].dir[fcbArray[fd].dirPos].size = fcbArray[fd].buflen;
-		printf("b_write: making it to dirWrite\n");
 		dirWrite(fcbArray[fd].dir, 
 			fcbArray[fd].dir[0].location);
-		printf("b_write: making it past dirWrite\n");
 		dirResetWorking();
 		fcbArray[fd].index = fcbArray[fd].index + count;
 
@@ -382,9 +364,6 @@ int b_close (b_io_fd fd)
 			return -1;
 		}
 		// free and zero everything
-		printf("b_close: entering b_close\n");
-		printf("b_close: dir size = %lu\n", fcbArray[fd].dir[0].size);
-		printf("b_close: dir location = %lu\n", fcbArray[fd].dir[0].location);
 		free(fcbArray[fd].buf);
 		fcbArray[fd].buf = NULL;
 		free(fcbArray[fd].dir);
