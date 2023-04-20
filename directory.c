@@ -342,21 +342,27 @@ int dirAddEntry(DirEntry ** dirp, char * name, uint64_t location, uint64_t size,
             dirToUpdate=NULL;
         }
     }
-    if(newDir[0].location != newDir[1].location){ // folder is not root, we need to update the parent
+    printf("dirAddEntry: dir[0].location = %lu", dir[0].location);
+    printf("dirAddEntry: dir[1].location = %lu", dir[1].location);
+
+    if(dir[0].location != dir[1].location){ // folder is not root, we need to update the parent
         DirEntry * dirToUpdate = dirInstance();
         dirRead(&dirToUpdate, newDir[1].location);
+        printf("dirAddEntry: dirToUpdate[0].size = %lu\n", newDir[0].size);
+        printf("dirAddEntry: dir[0].location = %lu\n", dir[0].location);
         uint64_t dirCount = dirToUpdate[0].size / sizeof(DirEntry);
         int i;
-        for(i = 0; i < dirCount; i++){
+        for(i = 2; i < dirCount; i++){
+            printf("dirAddEntry: dirToUpdate[i].location = %lu\n", dirToUpdate[i].location);
             if(dirToUpdate[i].location == dir[0].location){
                 break;
             }
         }
         if (i == dirCount){
-            printf("critical error, dir not found in parent\n");
+            printf("dirAddEntry: critical error, dir not found in parent\n");
             return -1;
         }
-        dirToUpdate[i].location == newDir[0].location;
+        dirToUpdate[i].location = newDir[0].location;
         dirToUpdate[i].size = newDir[0].size;
         dirWrite(dirToUpdate, dirToUpdate[0].location);
         free(dirToUpdate);

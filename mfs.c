@@ -48,8 +48,6 @@ int fs_mkdir(const char *pathname, mode_t mode){
     }
     dirAddEntry(&dir, dirToMake, newLocation, sizeof(DirEntry) * 2, 1);
 
-    printf("fs_mkdir: dir[0].size - %lu\n", dir[0].size);
-    printf("fs_mkdir: dir[0].location - %lu\n", dir[0].size);
 
 
     free(dir);
@@ -189,7 +187,6 @@ fdDir * fs_opendir(const char *pathname){
     DirEntry * dir = dirInstance();
 
     dirCopyWorking(&dir);
-    printf("fs_opendir: making it to dirtraversepath\n");
     int traverseReturn = dirTraversePath(&dir,pathname,dirToOpen);
     if(traverseReturn==-1){
         //Error, free space and put pointer to NULL
@@ -200,15 +197,12 @@ fdDir * fs_opendir(const char *pathname){
         vcb=NULL;
         return NULL;
     }
-    printf("fs_opendir: making it past dirtraversepath\n");
     if(dirToOpen[0]=='\0'){
         fdDir* myDir = malloc(sizeof(fdDir));
         myDir->d_reclen = sizeof(fdDir) ;
         myDir->dirEntryPosition = 0 ;
         myDir->directoryStartLocation =dir[0].location;
-        printf("fs_opendir: making it to root free dir\n");
-        //free(dir);
-        printf("fs_opendir: making it past root free dir\n");
+        free(dir);
         free(vcb);
         return  myDir;
     }
@@ -223,11 +217,7 @@ fdDir * fs_opendir(const char *pathname){
             myDir->d_reclen = sizeof(fdDir);
             myDir->dirEntryPosition = 0;
             myDir->directoryStartLocation =dir[i].location;
-            printf("fs_opendir: making it to free dir\n");
-            printf("fs_opendir: dir location = %lu\n", dir[0].location);
-            printf("fs_opendir: dir size = %lu\n", dir[0].size);
-            //free(dir);
-            printf("fs_opendir: making it past free dir\n");
+            free(dir);
             free(vcb);
             return myDir;
             

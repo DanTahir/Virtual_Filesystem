@@ -239,7 +239,6 @@ int b_write (b_io_fd fd, char * buffer, int count)
 		return -1;
 	}
 
-	printf("b_write: making it to b_write\n");
 
 	if(!(fcbArray[fd].flags & O_WRONLY) && !(fcbArray[fd].flags & O_RDWR)){
 		printf("write mode flag not set\n");
@@ -248,14 +247,10 @@ int b_write (b_io_fd fd, char * buffer, int count)
 	if(fcbArray[fd].flags & O_APPEND){
 		fcbArray[fd].index = fcbArray[fd].buflen;
 	}
-	printf("b_write: dir location before dirRead = %lu\n", fcbArray[fd].dir[0].location);
 	VCB * vcb = getVCBG();
 	// update the directory in case it's been changed since the file was opened or last written
-	printf("b_write: making it to dirRead\n");
 	dirRead(&(fcbArray[fd].dir), 
 		fcbArray[fd].dir[0].location);
-	printf("b_write: making it past dirRead\n");
-	printf("b_write: dir location after dirRead = %lu\n", fcbArray[fd].dir[0].location);
 
 	// If the write operation overruns the existing length of the file, we need to do a lot
 	// of stuff to properly write the new, longer file. First we free its existing filespace
@@ -273,16 +268,9 @@ int b_write (b_io_fd fd, char * buffer, int count)
 	// index is set to beyond the filesize)
 	if(fcbArray[fd].buflen < fcbArray[fd].index + count){
 		//TODO: do a lot of complicated stuff here
-		printf("b_write: making it into the greater-than if\n");
 		uint64_t oldLocation = fcbArray[fd].dir[fcbArray[fd].dirPos].location;
-		printf("b_write: making past the oldLocation assignment from the dir\n");
 
-		printf("b_write: oldlocation = %lu\n", oldLocation);
 		bitmapFreeFileSpace(fcbArray[fd].buflen, oldLocation);
-		printf("b_write: making past bitmapFreeFileSpace\n");
-		printf("b_write: fcbArray[fd].index + count = %lu\n", fcbArray[fd].index + count);
-		printf("b_write: fcbArray[fd].index = %lu\n", fcbArray[fd].index);
-		printf("b_write: count = %d\n", count);
 
 
 		uint64_t location = bitmapFirstFreeFilespace(fcbArray[fd].index + count);
@@ -293,11 +281,9 @@ int b_write (b_io_fd fd, char * buffer, int count)
 			free(vcb);
 			return -1;
 		}
-		printf("b_write: making past bitmapFirstFreeFileSpace\n");
 		free(fcbArray[fd].buf);
 		fcbArray[fd].buf = NULL;
 		fcbArray[fd].buf = fileInstance(fcbArray[fd].index + count);
-		printf("b_write: making it to fileRead\n");
 
 		fileRead(fcbArray[fd].buf, 
 			fcbArray[fd].buflen, 
