@@ -151,9 +151,14 @@ uint64_t bitmapFirstFreeRange(byte * bitmap, uint64_t blockCount, uint64_t range
 }
 
 uint64_t bitmapFirstFreeFilespace(uint64_t fileSize){
+    printf("bitmapFirstFreeFilespace: making it inside bitmapFirstFreeFilespace");
     VCB * vcb = getVCBG();
     byte * bitmap = bitmapInstance();
+    printf("bitmapFirstFreeFilespace: making it past bitmapInstance");
+
     bitmapRead(bitmap, vcb->blockCount, vcb->blockSize);
+    printf("bitmapFirstFreeFilespace: making it past bitmapRead");
+
     uint64_t range = roundUpDiv(fileSize, vcb->blockSize);
     uint64_t freeLocation = bitmapFirstFreeRange(bitmap, vcb->blockCount, range);
     free(vcb);

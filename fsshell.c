@@ -234,9 +234,7 @@ int cmd_ls (int argcnt, char *argvec[])
 		{
 		char * path = fs_getcwd(cwd, DIRMAX_LEN);	//get current working directory
 		fdDir * dirp;
-		printf("cmd_ls: getting to openDir\n");
 		dirp = fs_opendir (path);
-		printf("cmd_ls: getting to displayFiles\n");
 		return (displayFiles (dirp, flall, fllong));
 		}
 #endif
@@ -266,9 +264,7 @@ int cmd_touch (int argcnt, char *argvec[])
                         return (-1);
                 }
 
-		printf("running b_open\n");
         testfs_src_fd = b_open (src, O_WRONLY | O_CREAT);
-		printf("passing b_open, running b_close\n");
         if (testfs_src_fd < 0)
 	    return (testfs_src_fd);	//return with error
 
