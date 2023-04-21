@@ -378,17 +378,18 @@ int fs_rmdir(const char *pathname)
 // or the present working directory
 char * fs_getcwd(char *pathname, size_t size)
 {
-    int maxDepth = 30;
+    //int maxDepth = 30;
     DirEntry * dir = dirInstance();
-    char tokens[maxDepth][NAMELEN];
+    //char tokens[maxDepth][NAMELEN];
     dirCopyWorking(&dir);
     pathname[0] = '\0';
-
+    /*
     for(int i = 0; i < maxDepth; i++){
         tokens[i][0] = '\0';
     }
-
-    int tokenCount = 0;
+    */
+    int mySize = (int)size;
+    //int tokenCount = 0;
     while(1){
         if (dir[0].location == dir[1].location){
             break;
@@ -414,14 +415,25 @@ char * fs_getcwd(char *pathname, size_t size)
 
             return NULL;
         }
+        mySize = mySize - strlen(dir[i].name);
+        if (mySize < 0){
+            break;
+        }
+        char * pathnameCopy = malloc(size);
+        strcpy(pathnameCopy, pathname);
+        sprintf(pathname, "/%s%s", dir[i].name, pathnameCopy);
+        free(pathnameCopy);
+
+        /*
         strcpy(tokens[tokenCount], dir[i].name);
         tokenCount++;
         if (tokenCount == maxDepth){
             break;
         }
+        */
 
     }
-    
+    /*
     tokenCount--;
 
     int mySize = (int)size;
@@ -433,7 +445,7 @@ char * fs_getcwd(char *pathname, size_t size)
         sprintf(pathname, "%s/%s", pathname, tokens[tokenCount]);
 
     }
-
+    */
     if(pathname[0] == '\0'){
         strncpy(pathname, "/", size);
     }
