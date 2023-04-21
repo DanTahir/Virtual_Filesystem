@@ -176,6 +176,7 @@ buf->fileType=entry->isDir;
 
 free(dir);
 free(vcb);
+return 0;
 }
 
 
