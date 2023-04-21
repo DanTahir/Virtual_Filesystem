@@ -126,7 +126,7 @@ b_io_fd b_open (char * filename, int flags)
 
 		}
 		else{
-			printf("filename not found");
+			printf("filename not found\n");
 			free(dir);
 			dir=NULL;
 			return -1;
