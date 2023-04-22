@@ -228,6 +228,7 @@ int dirTraversePath(DirEntry ** dirp, const char * pathName, char * endName){
         }
         else {
             strncpy(endName, token, NAMELEN -1);
+            endName[NAMELEN - 1] = '\0';
         }
 
         token = nextToken;
