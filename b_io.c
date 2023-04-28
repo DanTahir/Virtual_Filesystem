@@ -193,6 +193,10 @@ int b_seek (b_io_fd fd, off_t offset, int whence)
 		{
 		return (-1); 					//invalid file descriptor
 		}
+	if (fcbArray[fd].buf == NULL){
+		printf("b_seek: buffer is null\n");
+		return -1;
+	}
 	// b_seek is pretty simple, we just set the index position based on
 	// the flags, then add the offset;
 	if (whence == SEEK_SET){
@@ -222,6 +226,11 @@ int b_write (b_io_fd fd, char * buffer, int count)
 		{
 		return (-1); 					//invalid file descriptor
 		}
+	// check that fd is not null
+	if (fcbArray[fd].buf == NULL){
+		printf("b_write: buffer is null\n");
+		return -1;
+	}
 	if(count < 0){
 		return -1;
 	}
@@ -339,6 +348,10 @@ int b_read (b_io_fd fd, char * buffer, int count)
 		{
 		return (-1); 					//invalid file descriptor
 		}
+	if (fcbArray[fd].buf == NULL){
+		printf("b_read: buffer is null\n");
+		return -1;
+	}	
 	if (!((fcbArray[fd].flags & O_ACCMODE) == O_RDONLY) && !(fcbArray[fd].flags & O_RDWR)){
 		printf("read flag not set\n");
 		return -1;
@@ -363,6 +376,10 @@ int b_close (b_io_fd fd)
 		if (fd < 0 || fd >= MAXFCBS){
 			return -1;
 		}
+		if (fcbArray[fd].buf == NULL){
+			printf("b_close: buffer is null\n");
+			return -1;
+		}	
 		// free and zero everything
 		free(fcbArray[fd].buf);
 		fcbArray[fd].buf = NULL;
