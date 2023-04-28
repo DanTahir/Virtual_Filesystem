@@ -52,7 +52,7 @@ void b_init ()
 
 //A small helper function for file descriptor validation
 bool isValidFileDescriptor(b_io_fd fd) {
-	if (fcbArray[fd].buf==NULL) return 0;
+	if (fcbArray[fd].buf==NULL) return false;
     else return (fd >= 0) && (fd < MAXFCBS);
 }
 
@@ -310,11 +310,11 @@ int b_write (b_io_fd fd, char * buffer, int count)
 	// memcpy the user buffer into the file buffer, then write the file buffer
 	// and increment the index.
 
-	memcpy(fcb->buf + fcb->index, buffer, count);
-	fileWrite(fcb->buf, 
-		fcb->buflen, 
-		fcb->dir[fcb->dirPos].location);
-	fcb->index = fcb->index + count;
+	memcpy(fcbArray[fd].buf + fcbArray[fd].index, buffer, count);
+	fileWrite(fcbArray[fd].buf, 
+		fcbArray[fd].buflen, 
+		fcbArray[fd].dir[fcbArray[fd].dirPos].location);
+	fcbArray[fd].index = fcbArray[fd].index + count;
 
 	free(vcb);
 	return count; //Change this
