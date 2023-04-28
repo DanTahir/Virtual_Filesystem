@@ -52,8 +52,7 @@ void b_init ()
 
 //A small helper function for file descriptor validation
 bool isValidFileDescriptor(b_io_fd fd) {
-	if (fcbArray[fd].buf==NULL) return false;
-    else return (fd >= 0) && (fd < MAXFCBS);
+    return (fd >= 0) && (fd < MAXFCBS);
 }
 
 int handleFileNotFound(b_io_fd returnFd, DirEntry *dir, char *realFileName, int flags) {
@@ -158,7 +157,7 @@ b_io_fd b_open (char * filename, int flags)
 	dirCopyWorking(&dir);
 	char realFileName[NAMELEN];
 	int traverseReturn = dirTraversePath(&dir, filename, realFileName);
-
+	
 	if(traverseReturn == -1){
 		printf("invalid path\n");
 		return -1;
