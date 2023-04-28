@@ -51,9 +51,9 @@ void b_init ()
 	}
 
 //A small helper function for file descriptor validation
-int  isValidFileDescriptor(b_io_fd fd) {
-	if (fcbArray[fd].buf==NULL ||((fd >= 0) && (fd < MAXFCBS))) return 0;
-    return 1;
+bool isValidFileDescriptor(b_io_fd fd) {
+	if (fcbArray[fd].buf==NULL) return 0;
+    else return (fd >= 0) && (fd < MAXFCBS);
 }
 
 int handleFileNotFound(b_io_fd returnFd, DirEntry *dir, char *realFileName, int flags) {
