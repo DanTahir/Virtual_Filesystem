@@ -41,8 +41,7 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 		VCB * vcb = getVCBG();
 		printf("writing root directory\n");
 		dirInitNew(vcb->rootDirStart);
-		free(vcb);
-		vcb=NULL;
+
 
 
 
@@ -54,6 +53,7 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 	VCB * vcb = getVCBG();
 	dirInitWorking(vcb->rootDirStart);
 	
+
 
 	free(vcb);
 	vcb=NULL;

@@ -395,26 +395,6 @@ int dirRemoveEntry(DirEntry ** dirp, int index){
         }
     }
 
-    if(dir[0].location != dir[1].location){ // folder is not root, we need to update the parent
-        DirEntry * dirToUpdate = dirInstance();
-        dirRead(&dirToUpdate, newDir[1].location);
-        uint64_t dirCount = dirToUpdate[0].size / sizeof(DirEntry);
-        int i;
-        for(i = 2; i < dirCount; i++){
-            if(dirToUpdate[i].location == dir[0].location){
-                break;
-            }
-        }
-        if (i == dirCount){
-            printf("dirAddEntry: critical error, dir not found in parent\n");
-            return -1;
-        }
-        dirToUpdate[i].size = newDir[0].size;
-        dirWrite(dirToUpdate, dirToUpdate[0].location);
-        free(dirToUpdate);
-        dirToUpdate = NULL;
-    }    
-
     dirWrite(newDir, newDir[0].location);
     dirResetWorking();
     dirRead(dirp, newDir[0].location);
