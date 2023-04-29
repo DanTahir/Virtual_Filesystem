@@ -155,7 +155,7 @@ b_io_fd b_open (char * filename, int flags)
 	// We loop through the directory and try to find the filename
 	uint64_t dirCount = dir[0].size / sizeof(DirEntry);
 	int i;
-	for (i = 2; i < dirCount; i++){
+	for (i = 0; i < dirCount; i++){
 		int strcmpVal = strncmp(dir[i].name, realFileName, NAMELEN - 1);
 		if(strcmpVal == 0){
 			break;
@@ -232,7 +232,7 @@ int b_write (b_io_fd fd, char * buffer, int count)
 	if (startup == 0) b_init();  //Initialize our system
 	// check that fd is between 0 and (MAXFCBS-1)
 	if (!isValidFileDescriptor(fd)){
-		printf("Invalid File descriptor");
+		printf("Invalid File descriptor\n");
 		return -1;
 	}
 
