@@ -26,7 +26,6 @@
 
 typedef struct b_fcb
 	{
-	/** TODO add al the information you need in the file control block **/
 	char * buf;		//holds the open file buffer
 	uint64_t index;		//holds the current position in the buffer
 	uint64_t buflen;		//holds how many valid bytes are in the buffer
@@ -133,9 +132,6 @@ b_io_fd b_open (char * filename, int flags)
 	{
 	b_io_fd returnFd;
 
-	//*** TODO ***:  Modify to save or set any information needed
-	//
-	//
 		
 	if (startup == 0) b_init();  //Initialize our system
 	
@@ -146,11 +142,11 @@ b_io_fd b_open (char * filename, int flags)
 	}
 
 	// first we set up the directory and follow the path to the directory and filename
-
 	DirEntry * dir = dirInstance();
 	dirCopyWorking(&dir);
 	char realFileName[NAMELEN];
 	int traverseReturn = dirTraversePath(&dir, filename, realFileName);
+
 	if(traverseReturn == -1){
 		printf("invalid path\n");
 		return -1;
@@ -181,98 +177,52 @@ b_io_fd b_open (char * filename, int flags)
 			}
 		}
 
-			fcbArray[returnFd].dirPos = i;
-			fcbArray[returnFd].buf = fileInstance(1);
-			fcbArray[returnFd].buflen = 0;
-			fcbArray[returnFd].index = 0;
-			fcbArray[returnFd].flags = flags;
-			return (returnFd);
-
-		}
-		else{
-			printf("filename not found\n");
-			free(dir);
-			dir=NULL;
-			return -1;
-		}
-	}
 	if(dir[i].isDir == 1){
 		printf("directory selected\n");
 		free(dir);
 		dir=NULL;
 		return -1;
 	}
-	// If the truncate flag is set, free the filespace in the bitmap, set the size
-	// to zero in the directory, set the location to zero (because it no longer has a size so it
-	// doesn't take up any location) then write the directory. This effectively zeroes
-	// out the file.
+
 	if (flags & O_TRUNC){
 		printf("going to trunc");
 		handleTruncateFlag(dir, i);
 	}
 
-
-	}
 	// At this point we've found a file and are ready to do something with it.
-	// if its size is zero we set its buffer size to one block. If it has a size
-	// we set its buffer to the size of the file rounded up to the nearest block.
-	// this allows us to do LBA reads and writes without allocating a temp buffer.
-	
-	if(dir[i].size == 0){
-		fcbArray[returnFd].buf = fileInstance(1);
-	}
-	else{
-		fcbArray[returnFd].buf = fileInstance(dir[i].size);
-	}
-	// Now we read the whole file into the buffer. This allows us to do b_read
-	// without calling LBARead at all, and only call LBAWrite once per b_write. At
-	// a cost of theoretically no greater than 10MB of memory (the maximum filesize on
-	// the volume). While also massively simplifying our code. It's win win win!
-	fileRead(fcbArray[returnFd].buf, 
-		dir[i].size, 
-		dir[i].location);
-	// Now we store various data including the directory pointer and position (so we can
-	// update the directory in b_write).
-	fcbArray[returnFd].buflen = dir[i].size;
-	fcbArray[returnFd].index = 0;
-	fcbArray[returnFd].dir = dir;
-	fcbArray[returnFd].dirPos = i;
-	fcbArray[returnFd].flags = flags;
+	init_fcb(returnFd, dir, i, flags);
 
-	
 	return (returnFd);						// all set
 	}
 
 
 // Interface to seek function	
-int b_seek (b_io_fd fd, off_t offset, int whence)
-	{
+int b_seek (b_io_fd fd, off_t offset, int whence){
 	if (startup == 0) b_init();  //Initialize our system
 
 	// check that fd is between 0 and (MAXFCBS-1)
-	if ((fd < 0) || (fd >= MAXFCBS))
-		{
-		return (-1); 					//invalid file descriptor
-		}
-	if (fcbArray[fd].buf == NULL){
-		printf("b_seek: buffer is null\n");
-		return -1;
-	}
+	if (!isValidFileDescriptor(fd)) return -1;
+	
 	// b_seek is pretty simple, we just set the index position based on
 	// the flags, then add the offset;
-	if (whence == SEEK_SET){
-		fcbArray[fd].index = 0;
-	}
-	else if(whence == SEEK_CUR){
-		fcbArray[fd].index = fcbArray[fd].index;
-	}
-	else if (whence == SEEK_END){
-		fcbArray[fd].index = fcbArray[fd].buflen;
+	b_fcb *fcb= &fcbArray[fd];
+
+	switch (whence) {
+		case SEEK_SET:
+			fcb->index = 0;
+			break;
+		case SEEK_END:
+			fcb->index = fcb->buflen;
+		case SEEK_CUR:
+			break;
+		default:
+			return -1;
 	}
 
-	fcbArray[fd].index = fcbArray[fd].index + offset;
-		
-	return fcbArray[fd].index; 
+	
+
+	fcb->index += offset;		
+	return fcb->index; 
 	}
 
 
@@ -290,8 +240,8 @@ int b_write (b_io_fd fd, char * buffer, int count)
 		return -1;
 	}
 
-
-	if(!(fcbArray[fd].flags & O_WRONLY) && !(fcbArray[fd].flags & O_RDWR)){
+	b_fcb *fcb= &fcbArray[fd];
+	if(!(fcb->flags & O_WRONLY) && !(fcb->flags & O_RDWR)){
 		printf("write mode flag not set\n");
 		return -1;
 	}
@@ -299,10 +249,10 @@ int b_write (b_io_fd fd, char * buffer, int count)
 	if(fcb->flags & O_APPEND){
 		fcb->index = fcb->buflen;
 	}
+
 	VCB * vcb = getVCBG();
 	// update the directory in case it's been changed since the file was opened or last written
-	dirRead(&(fcbArray[fd].dir), 
-		fcbArray[fd].dir[0].location);
+	dirRead(&(fcb->dir), fcb->dir[0].location);
 
 	// If the write operation overruns the existing length of the file, we need to do a lot
 	// of stuff to properly write the new, longer file. First we free its existing filespace
@@ -318,42 +268,42 @@ int b_write (b_io_fd fd, char * buffer, int count)
 	// Next we update the directory values and write the directory to disk
 	// Finally we return the number of bytes written (which may be more than count if the 
 	// index is set to beyond the filesize)
-	if(fcbArray[fd].buflen < fcbArray[fd].index + count){
-		//TODO: do a lot of complicated stuff here
-		uint64_t oldLocation = fcbArray[fd].dir[fcbArray[fd].dirPos].location;
+	if(fcb->buflen < fcb->index + count){
 
-		bitmapFreeFileSpace(fcbArray[fd].buflen, oldLocation);
+		uint64_t oldLocation = fcb->dir[fcb->dirPos].location;
+
+		bitmapFreeFileSpace(fcb->buflen, oldLocation);
 
 
-		uint64_t location = bitmapFirstFreeFilespace(fcbArray[fd].index + count);
+		uint64_t location = bitmapFirstFreeFilespace(fcb->index + count);
 		if(location == 0){
 
 			printf("Volume full\n");
-			bitmapAllocFileSpace(fcbArray[fd].buflen, oldLocation);
+			bitmapAllocFileSpace(fcb->buflen, oldLocation);
 			free(vcb);
 			return -1;
 		}
-		free(fcbArray[fd].buf);
-		fcbArray[fd].buf = NULL;
-		fcbArray[fd].buf = fileInstance(fcbArray[fd].index + count);
+		free(fcb->buf);
+		fcb->buf = NULL;
+		fcb->buf = fileInstance(fcb->index + count);
 
-		fileRead(fcbArray[fd].buf, 
-			fcbArray[fd].buflen, 
-			oldLocation);		
+		fileRead(fcb->buf, fcb->buflen, oldLocation);		
 
-		memcpy(fcbArray[fd].buf + fcbArray[fd].index, buffer, count);
-		fcbArray[fd].buflen = fcbArray[fd].index + count;
-		bitmapAllocFileSpace(fcbArray[fd].buflen, location);
-		fileWrite(fcbArray[fd].buf, fcbArray[fd].buflen, location);
-		fcbArray[fd].dir[fcbArray[fd].dirPos].location = location;
-		fcbArray[fd].dir[fcbArray[fd].dirPos].size = fcbArray[fd].buflen;
-		dirWrite(fcbArray[fd].dir, 
-			fcbArray[fd].dir[0].location);
+		memcpy(fcb->buf + fcb->index, buffer, count);
+		fcb->buflen = fcb->index + count;
+
+		bitmapAllocFileSpace(fcb->buflen, location);
+		fileWrite(fcb->buf, fcb->buflen, location);
+
+		fcb->dir[fcb->dirPos].location = location;
+		fcb->dir[fcb->dirPos].size = fcb->buflen;
+		
+		dirWrite(fcb->dir, fcb->dir[0].location);
 		dirResetWorking();
-		fcbArray[fd].index = fcbArray[fd].index + count;
+		fcb->index = fcb->index + count;
 
-		int bytesWritten = (fcbArray[fd].buflen < fcbArray[fd].index) ?
-			fcbArray[fd].index + count - fcbArray[fd].buflen : count;
+		int bytesWritten = (fcb->buflen < fcb->index) ?
+			fcb->index + count - fcb->buflen : count;
 		
 		free(vcb);
 		return bytesWritten;
@@ -363,11 +313,11 @@ int b_write (b_io_fd fd, char * buffer, int count)
 	// memcpy the user buffer into the file buffer, then write the file buffer
 	// and increment the index.
 
-	memcpy(fcbArray[fd].buf + fcbArray[fd].index, buffer, count);
-	fileWrite(fcbArray[fd].buf, 
-		fcbArray[fd].buflen, 
-		fcbArray[fd].dir[fcbArray[fd].dirPos].location);
-	fcbArray[fd].index = fcbArray[fd].index + count;
+	memcpy(fcb->buf + fcb->index, buffer, count);
+	fileWrite(fcb->buf, 
+		fcb->buflen, 
+		fcb->dir[fcb->dirPos].location);
+	fcb->index = fcb->index + count;
 
 	free(vcb);
 	return count; //Change this
@@ -400,53 +350,45 @@ int b_read (b_io_fd fd, char * buffer, int count)
 	if (startup == 0) b_init();  //Initialize our system
 
 	// check that fd is between 0 and (MAXFCBS-1)
-	if ((fd < 0) || (fd >= MAXFCBS))
-		{
-		return (-1); 					//invalid file descriptor
-		}
-	if (fcbArray[fd].buf == NULL){
-		printf("b_read: buffer is null\n");
-		return -1;
-	}	
-	if (!((fcbArray[fd].flags & O_ACCMODE) == O_RDONLY) && !(fcbArray[fd].flags & O_RDWR)){
+	if (!isValidFileDescriptor(fd)) return -1;
+
+	b_fcb *fcb= &fcbArray[fd];
+	if (((fcb->flags & O_ACCMODE) != O_RDONLY) && !(fcb->flags & O_RDWR)){
 		printf("read flag not set\n");
 		return -1;
 	}
 
-	int myCount = (fcbArray[fd].buflen < fcbArray[fd].index + count) ?
-		fcbArray[fd].buflen - fcbArray[fd].index : count;
-	if (myCount < 0){
-		myCount = 0;
+	// calculate the number of bytes to read from the file buffer
+	int bytesToRead = (fcb->buflen < fcb->index + count) ?
+		fcb->buflen - fcb->index : count;
+	
+	// make sure we're not trying to read more bytes than available in the buffer
+	if (bytesToRead < 0){
+		bytesToRead = 0;
 	}
-	// We don't have to lbaread here at all, we just read from the file buffer!
-	memcpy(buffer, fcbArray[fd].buf + fcbArray[fd].index, myCount);
-	fcbArray[fd].index = fcbArray[fd].index + myCount;
 
-	return myCount;	//Change this
+	// We don't have to lbaread here at all, we just read from the file buffer!
+	memcpy(buffer, fcb->buf + fcb->index, bytesToRead);
+
+	fcb->index += bytesToRead;
+
+	return bytesToRead;	//Change this
 	}
 	
 // Interface to Close the file	
 int b_close (b_io_fd fd)
 	{
-		// make sure the fd is valid
-		if (fd < 0 || fd >= MAXFCBS){
-			return -1;
-		}
-		if (fcbArray[fd].buf == NULL){
-			printf("b_close: buffer is null\n");
-			return -1;
-		}	
+		// check that fd is between 0 and (MAXFCBS-1)
+		if (!isValidFileDescriptor(fd)) return -1;
+		b_fcb *fcb= &fcbArray[fd];
 		// free and zero everything
-		free(fcbArray[fd].buf);
-		fcbArray[fd].buf = NULL;
-		free(fcbArray[fd].dir);
-		fcbArray[fd].dir = NULL;
-		fcbArray[fd].buflen = 0;
-		fcbArray[fd].dirPos = 0;
-		fcbArray[fd].index = 0;
-		fcbArray[fd].flags = 0;
+		free(fcb->buf);
+		fcb->buf = NULL;
+		free(fcb->dir);
+		fcb->dir = NULL;
+		fcb->buflen = 0;
+		fcb->dirPos = 0;
+		fcb->index = 0;
+		fcb->flags = 0;
 		return 0;
-
-
-
 	}
