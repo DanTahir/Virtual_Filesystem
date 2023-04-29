@@ -51,37 +51,10 @@ void b_init ()
 	}
 
 //A small helper function for file descriptor validation
-int  isValidFileDescriptor(b_io_fd fd) {
-	if (fcbArray[fd].buf==NULL ||((fd >= 0) && (fd < MAXFCBS))) return 0;
-    return 1;
+int isValidFileDescriptor(b_io_fd fd) {
+    return (fd >= 0 && fd < MAXFCBS && fcbArray[fd].buf != NULL);
 }
 
-int handleFileNotFound(b_io_fd returnFd, DirEntry *dir, char *realFileName, int flags) {
-	// if the filename isn't found, we check if the create flag is set. If it isn't,
-	// we say "file not found" and quit. If it is, we make sure the directory isn't
-	// full, then we create a file of size zero with a buffer the size of one block
-	// (there has to be a buffer so b_getFCB recognizes it as taken);
-    if (flags & O_CREAT) {
-        int addEntryReturn = dirAddEntry(&dir, realFileName, 0, 0, 0);
-        if (addEntryReturn == -1) {
-            printf("Couldn't add entry to directory\n");
-            return -1;
-        }
-		b_fcb *fcb= &fcbArray[returnFd];
-        fcb->dir = dir;
-        fcb->dirPos = dir[0].size / sizeof(DirEntry);
-        fcb->buf = fileInstance(1);
-        fcb->buflen = 0;
-        fcb->index = 0;
-        fcb->flags = flags;
-        return returnFd;
-    } else {
-        printf("filename not found\n");
-        free(dir);
-        dir = NULL;
-        return -1;
-    }
-}
 
 void init_fcb(b_io_fd returnFd, DirEntry *dir, int i, int flags) {
 	b_fcb *fcb = &fcbArray[returnFd];
@@ -124,6 +97,21 @@ void handleTruncateFlag(DirEntry *dir, int i) {
     dirResetWorking();
 }
 
+int createNewFile(DirEntry *dir, char *realFileName, int flags, int returnFd,int i) {
+    b_fcb *fcb = &fcbArray[returnFd];
+    int addEntryReturn = dirAddEntry(&dir, realFileName, 0, 0, 0);
+    if (addEntryReturn == -1) {
+        printf("Couldn't add entry to directory\n");
+        return -1;
+    }
+    fcb->dir = dir;
+    fcb->dirPos = i;
+    fcb->buf = fileInstance(1);
+    fcb->buflen = 0;
+    fcb->index = 0;
+    fcb->flags = flags;
+    return returnFd;
+}
 //Method to get a free FCB element
 b_io_fd b_getFCB ()
 	{
@@ -137,9 +125,9 @@ b_io_fd b_getFCB ()
 	return (-1);  //all in use
 	}
 	
-// Interface to open a buffered file
-// Modification of interface for this assignment, flags match the Linux flags for open
-// O_RDONLY, O_WRONLY, or O_RDWR
+// // Interface to open a buffered file
+// // Modification of interface for this assignment, flags match the Linux flags for open
+// // O_RDONLY, O_WRONLY, or O_RDWR
 b_io_fd b_open (char * filename, int flags)
 	{
 	b_io_fd returnFd;
@@ -173,10 +161,21 @@ b_io_fd b_open (char * filename, int flags)
 			break;
 		}
 	}
-
+	// if the filename isn't found, we check if the create flag is set. If it isn't,
+	// we say "file not found" and quit. If it is, we make sure the directory isn't
+	// full, then we create a file of size zero with a buffer the size of one block
+	// (there has to be a buffer so b_getFCB recognizes it as taken);
 	if (i == dirCount){
-		return handleFileNotFound(returnFd, dir, realFileName, flags);
-	}
+		    if (flags & O_CREAT) {
+				return createNewFile(dir, realFileName, flags, returnFd,i);
+			} 
+			else {
+				printf("filename not found\n");
+				free(dir);
+				dir = NULL;
+				return -1;
+			}
+		}
 
 	if(dir[i].isDir == 1){
 		printf("directory selected\n");
@@ -186,7 +185,8 @@ b_io_fd b_open (char * filename, int flags)
 	}
 
 	if (flags & O_TRUNC){
-		 handleTruncateFlag(dir, i);
+		printf("going to trunc");
+		handleTruncateFlag(dir, i);
 	}
 
 	// At this point we've found a file and are ready to do something with it.
@@ -224,14 +224,15 @@ int b_seek (b_io_fd fd, off_t offset, int whence){
 	}
 
 
-
 // Interface to write function	
 int b_write (b_io_fd fd, char * buffer, int count)
 	{
 	if (startup == 0) b_init();  //Initialize our system
-
 	// check that fd is between 0 and (MAXFCBS-1)
-	if (!isValidFileDescriptor(fd)) return -1;
+	if (!isValidFileDescriptor(fd)){
+		printf("Invalid File descriptor");
+		return -1;
+	}
 
 	if(count < 0){
 		return -1;
@@ -242,7 +243,7 @@ int b_write (b_io_fd fd, char * buffer, int count)
 		printf("write mode flag not set\n");
 		return -1;
 	}
-
+	
 	if(fcb->flags & O_APPEND){
 		fcb->index = fcb->buflen;
 	}
