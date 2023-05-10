@@ -1,3 +1,11 @@
+# Virtual File System for Linux
+
+I wrote this virtual file system as a group project for CSC415 - Operating System Principles at San Francisco Statne University, taught by Robert Bierman. I got a 97 on the group score, the highest grade in three classes of 40 students each (with 4 students a team, so like 30 total teams). It was a group project but commits will show I wrote the vast majority of it myself. I would have had a 100 except I forgot to comment mfs.c.
+
+The key to the success of the project was keeping everything as stupidly simple as possible. No attempts to track time. Contiguous file allocation, fragmentation be damned. And an approach to b_io so simple you'll wonder why Bierman doesn't A. teach or B. ban it. If you're here from a future operating systems class looking for inspiration, remember, it's not plagiarism if you cite your sources.
+
+This is the biggest program I've ever written and it was a huge success so I've decided to preserve it here. Apart from this header everything is as I submitted it for the assignment including the original readme below (I may eventually add comments for mfs.c).
+
 # CSC415 Group Term Assignment - File System
 
 This is a GROUP assignment written in C.  Only one person on the team needs to submit the project.
